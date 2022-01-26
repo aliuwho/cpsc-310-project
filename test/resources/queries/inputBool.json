@@ -1,0 +1,6 @@
+{
+  "title": "Bool Query Throws Insight Error",
+  "input": false,
+  "errorExpected": true,
+  "expected": "InsightError"
+}
