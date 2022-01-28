@@ -303,7 +303,7 @@ describe("InsightFacade", function () {
 							id: "courses-2",
 							kind: InsightDatasetKind.Courses,
 							numRows: 64612,
-						},
+						}
 					];
 					expect(insightDatasets).to.be.an.instanceOf(Array);
 					expect(insightDatasets).to.have.length(2);
@@ -347,16 +347,17 @@ describe("InsightFacade", function () {
 		});
 	});
 
+
 	describe("Perform Query", function () {
 		let facade: IInsightFacade;
 
-		before(function () {
+		before(async function () {
 			clearDisk();
 			facade = new InsightFacade();
+			courses = getContentFromArchives("courses.zip");
 			courses2 = getContentFromArchives("ten-courses.zip");
-			return facade.addDataset("courses", courses, InsightDatasetKind.Courses).then(() => {
-				return facade.addDataset("courses-2", courses2, InsightDatasetKind.Courses);
-			});
+			await facade.addDataset("courses", courses, InsightDatasetKind.Courses);
+			await facade.addDataset("courses-2", courses2, InsightDatasetKind.Courses);
 		});
 
 		it("should run dynamic folder tests for performQuery", function () {
