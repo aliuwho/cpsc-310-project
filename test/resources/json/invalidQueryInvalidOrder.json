@@ -1,0 +1,21 @@
+{
+  "title": "query with order parameter that is not in columns throws InsightError",
+  "input": {
+    "WHERE": {
+      "IS": {
+        "courses_dept": "atsc"
+      }
+    },
+    "OPTIONS": {
+      "COLUMNS": [
+        "courses_dept",
+        "courses_id",
+        "courses_title"
+      ],
+      "ORDER": "courses_avg"
+    }
+  },
+  "errorExpected": true,
+  "verbose": false,
+  "expected": "InsightError"
+}

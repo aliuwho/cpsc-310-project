@@ -1,0 +1,17 @@
+{
+  "title": "query with an object passed to COLUMNS should throw InsightError",
+  "input": {
+    "WHERE": {
+      "LT": {
+        "courses_avg": 30
+      }
+    },
+    "OPTIONS": {
+      "COLUMNS": {},
+      "ORDER": "courses_avg"
+    }
+  },
+  "errorExpected": true,
+  "verbose": false,
+  "expected": "InsightError"
+}

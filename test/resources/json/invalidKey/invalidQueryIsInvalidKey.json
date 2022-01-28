@@ -1,0 +1,21 @@
+{
+  "title": "query with invalid key for IS throws InsightError",
+  "input": {
+    "WHERE": {
+      "IS": {
+        "courses_avg": "0"
+      }
+    },
+    "OPTIONS": {
+      "COLUMNS": [
+        "courses_dept",
+        "courses_id",
+        "courses_avg"
+      ],
+      "ORDER": "courses_avg"
+    }
+  },
+  "errorExpected": true,
+  "verbose": false,
+  "expected": "InsightError"
+}
