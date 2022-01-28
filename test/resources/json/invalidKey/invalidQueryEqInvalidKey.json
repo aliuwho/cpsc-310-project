@@ -1,0 +1,20 @@
+{
+  "title": "query with invalid key for EQ throws InsightError",
+  "input": {
+    "WHERE": {
+      "EQ": {
+        "courses_dept": "atsc"
+      }
+    },
+    "OPTIONS": {
+      "COLUMNS": [
+        "courses_dept",
+        "courses_avg"
+      ],
+      "ORDER": "courses_avg"
+    }
+  },
+  "errorExpected": true,
+  "verbose": false,
+  "expected": "InsightError"
+}

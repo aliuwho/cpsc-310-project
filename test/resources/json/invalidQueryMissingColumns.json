@@ -1,0 +1,17 @@
+{
+  "title": "query missing Columns field throws InsightError",
+  "input": {
+    "WHERE": {
+      "IS": {
+        "courses_title": "arch design v"
+      }
+    },
+    "OPTIONS": {
+      "COLUMNS": [
+      ]
+    }
+  },
+  "errorExpected": true,
+  "verbose": false,
+  "expected": "InsightError"
+}

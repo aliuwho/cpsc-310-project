@@ -1,0 +1,17 @@
+{
+  "title": "valid query throws ResultTooLargeError",
+  "input": {
+    "WHERE": {
+    },
+    "OPTIONS": {
+      "COLUMNS": [
+        "courses_dept",
+        "courses_avg"
+      ],
+      "ORDER": "courses_avg"
+    }
+  },
+  "errorExpected": true,
+  "verbose": false,
+  "expected": "ResultTooLargeError"
+}

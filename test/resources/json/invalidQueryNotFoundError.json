@@ -1,0 +1,20 @@
+{
+  "title": "query that references non-existent data set throws InsightError",
+  "input": {
+    "WHERE": {
+      "G": {
+        "classes_avg": 97
+      }
+    },
+    "OPTIONS": {
+      "COLUMNS": [
+        "classes_dept",
+        "classes_avg"
+      ],
+      "ORDER": "classes_avg"
+    }
+  },
+  "errorExpected": true,
+  "verbose": false,
+  "expected": "InsightError"
+}

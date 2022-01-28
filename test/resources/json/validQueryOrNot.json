@@ -1,0 +1,32 @@
+{
+  "title": "query with x or not x",
+  "input": {
+    "WHERE": {
+      "OR": [
+        {
+          "EQ": {
+            "courses_avg": 69
+          }
+        },
+        {
+          "NOT": {
+            "EQ": {
+              "courses_avg": 69
+            }
+          }
+        }
+      ]
+    },
+    "OPTIONS": {
+      "COLUMNS": [
+        "courses_year",
+        "courses_instructor",
+        "courses_audit"
+      ],
+      "ORDER": "courses_year"
+    }
+  },
+  "errorExpected": true,
+  "verbose": false,
+  "expected": "ResultTooLargeError"
+}

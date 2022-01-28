@@ -1,0 +1,70 @@
+{
+  "title": "valid query with a single Column parameter",
+  "input": {
+    "WHERE": {
+      "IS": {
+        "courses_title": "arch design v"
+      }
+    },
+    "OPTIONS": {
+      "COLUMNS": [
+        "courses_uuid"
+      ]
+    }
+  },
+  "errorExpected": false,
+  "verbose": false,
+  "expected": [
+    {
+      "courses_uuid": "5033"
+    },
+    {
+      "courses_uuid": "5034"
+    },
+    {
+      "courses_uuid": "5035"
+    },
+    {
+      "courses_uuid": "5036"
+    },
+    {
+      "courses_uuid": "5037"
+    },
+    {
+      "courses_uuid": "5038"
+    },
+    {
+      "courses_uuid": "25392"
+    },
+    {
+      "courses_uuid": "25393"
+    },
+    {
+      "courses_uuid": "25394"
+    },
+    {
+      "courses_uuid": "25395"
+    },
+    {
+      "courses_uuid": "25396"
+    },
+    {
+      "courses_uuid": "56281"
+    },
+    {
+      "courses_uuid": "56282"
+    },
+    {
+      "courses_uuid": "56283"
+    },
+    {
+      "courses_uuid": "56284"
+    },
+    {
+      "courses_uuid": "56285"
+    },
+    {
+      "courses_uuid": "56286"
+    }
+  ]
+}
