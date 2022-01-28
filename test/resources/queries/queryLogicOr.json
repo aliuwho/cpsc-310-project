@@ -1,0 +1,28 @@
+{
+  "title": "Query Key Logic Or",
+  "input": {
+    "WHERE": {
+      "OR": [
+        {
+          "EQ": {
+            "courses_audit": 10
+          }
+        },
+        {
+          "IS": {
+            "courses_dept": "zool"
+          }
+        }
+      ]
+    },
+    "OPTIONS": {
+      "COLUMNS": [
+        "courses_title",
+        "courses_audit",
+        "courses_year"
+      ]
+    }
+  },
+  "errorExpected": false,
+  "expected": [{"courses_title":"adv biometrics","courses_audit":10,"courses_year":1900},{"courses_title":"mult regres meth","courses_audit":10,"courses_year":2015},{"courses_title":"mult regres meth","courses_audit":10,"courses_year":1900},{"courses_title":"eval src evidenc","courses_audit":10,"courses_year":2010},{"courses_title":"rehab learning","courses_audit":10,"courses_year":1900},{"courses_title":"comp animal phyl","courses_audit":0,"courses_year":2013},{"courses_title":"comp animal phyl","courses_audit":0,"courses_year":1900},{"courses_title":"comp animal phyl","courses_audit":0,"courses_year":2015},{"courses_title":"comp animal phyl","courses_audit":0,"courses_year":1900},{"courses_title":"comp animal phyl","courses_audit":0,"courses_year":2009},{"courses_title":"comp animal phyl","courses_audit":0,"courses_year":1900},{"courses_title":"comp animal phyl","courses_audit":0,"courses_year":2014},{"courses_title":"comp animal phyl","courses_audit":0,"courses_year":1900},{"courses_title":"comp animal phyl","courses_audit":0,"courses_year":2012},{"courses_title":"comp animal phyl","courses_audit":0,"courses_year":1900},{"courses_title":"comp animal phyl","courses_audit":0,"courses_year":2011},{"courses_title":"comp animal phyl","courses_audit":0,"courses_year":1900},{"courses_title":"comp animal phyl","courses_audit":0,"courses_year":2008},{"courses_title":"comp animal phyl","courses_audit":0,"courses_year":1900},{"courses_title":"masters thesis","courses_audit":0,"courses_year":1900},{"courses_title":"masters thesis","courses_audit":0,"courses_year":2009},{"courses_title":"masters thesis","courses_audit":0,"courses_year":2009},{"courses_title":"masters thesis","courses_audit":0,"courses_year":2009},{"courses_title":"masters thesis","courses_audit":0,"courses_year":2009},{"courses_title":"masters thesis","courses_audit":0,"courses_year":1900},{"courses_title":"masters thesis","courses_audit":0,"courses_year":2010},{"courses_title":"masters thesis","courses_audit":0,"courses_year":1900},{"courses_title":"masters thesis","courses_audit":0,"courses_year":2011},{"courses_title":"masters thesis","courses_audit":0,"courses_year":2011},{"courses_title":"masters thesis","courses_audit":0,"courses_year":1900},{"courses_title":"masters thesis","courses_audit":0,"courses_year":2011},{"courses_title":"masters thesis","courses_audit":0,"courses_year":1900},{"courses_title":"masters thesis","courses_audit":0,"courses_year":1900},{"courses_title":"masters thesis","courses_audit":0,"courses_year":2008},{"courses_title":"masters thesis","courses_audit":0,"courses_year":2010},{"courses_title":"masters thesis","courses_audit":0,"courses_year":2010},{"courses_title":"masters thesis","courses_audit":0,"courses_year":2010},{"courses_title":"masters thesis","courses_audit":0,"courses_year":1900},{"courses_title":"masters thesis","courses_audit":0,"courses_year":1900},{"courses_title":"masters thesis","courses_audit":0,"courses_year":2008},{"courses_title":"masters thesis","courses_audit":0,"courses_year":2008}]
+}

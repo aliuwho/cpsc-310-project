@@ -1,0 +1,38 @@
+{
+  "title": "Query Key Missing ID String Error",
+  "input": {
+    "WHERE": {
+      "OR": [
+        {
+          "AND": [
+            {
+              "GT": {
+                "_avg": 90
+              }
+            },
+            {
+              "IS": {
+                "_dept": "adhe"
+              }
+            }
+          ]
+        },
+        {
+          "EQ": {
+            "_avg": 95
+          }
+        }
+      ]
+    },
+    "OPTIONS": {
+      "COLUMNS": [
+        "_dept",
+        "_id",
+        "_avg"
+      ],
+      "ORDER": "_avg"
+    }
+  },
+  "errorExpected": true,
+  "expected": "InsightError"
+}
