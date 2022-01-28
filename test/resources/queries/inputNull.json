@@ -1,0 +1,6 @@
+{
+  "title": "Null Query Throws Insight Error",
+  "input": null,
+  "errorExpected": true,
+  "expected": "InsightError"
+}

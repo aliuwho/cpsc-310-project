@@ -1,0 +1,6 @@
+{
+  "title": "String Query Throws Insight Error",
+  "input": "String example",
+  "errorExpected": true,
+  "expected": "InsightError"
+}

@@ -1,0 +1,6 @@
+{
+  "title": "Number Query Throws Insight Error",
+  "input": 123,
+  "errorExpected": true,
+  "expected": "InsightError"
+}

@@ -1,0 +1,19 @@
+{
+  "title": "Query Course Key has Wrong Spelling",
+  "input": {
+    "WHERE": {
+      "EQ": {
+        "courses_average": 123
+      }
+    },
+    "OPTIONS": {
+      "COLUMNS": [
+        "courses_dept",
+        "courses_avg"
+      ],
+      "ORDER": "courses_avg"
+    }
+  },
+  "errorExpected": true,
+  "expected": "InsightError"
+}

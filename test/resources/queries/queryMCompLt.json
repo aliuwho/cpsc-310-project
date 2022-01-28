@@ -1,0 +1,19 @@
+{
+  "title": "Query Key MComparison GT",
+  "input": {
+    "WHERE": {
+      "LT": {
+        "courses_avg": 30
+      }
+    },
+    "OPTIONS": {
+      "COLUMNS": [
+        "courses_year",
+        "courses_avg",
+        "courses_uuid"
+      ]
+    }
+  },
+  "errorExpected": false,
+  "expected": [{"courses_year":2016,"courses_avg":4,"courses_uuid":"16427"},{"courses_year":1900,"courses_avg":4,"courses_uuid":"16428"},{"courses_year":2013,"courses_avg":4.5,"courses_uuid":"84769"},{"courses_year":1900,"courses_avg":0,"courses_uuid":"89536"},{"courses_year":2009,"courses_avg":0,"courses_uuid":"56402"},{"courses_year":1900,"courses_avg":0,"courses_uuid":"56403"},{"courses_year":1900,"courses_avg":1,"courses_uuid":"49835"}]
+}
