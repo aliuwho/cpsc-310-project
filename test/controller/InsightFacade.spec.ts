@@ -163,11 +163,6 @@ describe("InsightFacade", function () {
 					})
 			);
 		});
-
-		it("should reject adding datasets with Rooms instead of Courses", function () {
-			const insightDatasets = facade.addDataset("courses", courses, InsightDatasetKind.Rooms);
-			return expect(insightDatasets).to.be.eventually.rejectedWith(InsightError);
-		});
 	});
 
 	describe("Remove Datasets", function () {
