@@ -4,7 +4,7 @@ import {
 	InsightError,
 	InsightResult,
 	NotFoundError,
-	ResultTooLargeError
+	ResultTooLargeError,
 } from "../../src/controller/IInsightFacade";
 import InsightFacade from "../../src/controller/InsightFacade";
 import {expect} from "chai";
@@ -33,16 +33,16 @@ describe("InsightFacade", function () {
 		});
 
 		it("should add single dataset", function () {
-			return facade.addDataset("courses", courses, InsightDatasetKind.Courses)
-				.then((addedIDs) => {
-					expect(addedIDs).to.deep.equal(["courses"]);
-					expect(addedIDs).to.be.an.instanceOf(Array);
-					expect(addedIDs).to.have.length(1);
-				});
+			return facade.addDataset("courses", courses, InsightDatasetKind.Courses).then((addedIDs) => {
+				expect(addedIDs).to.deep.equal(["courses"]);
+				expect(addedIDs).to.be.an.instanceOf(Array);
+				expect(addedIDs).to.have.length(1);
+			});
 		});
 
 		it("should add multiple dataset", function () {
-			return facade.addDataset("courses", courses, InsightDatasetKind.Courses)
+			return facade
+				.addDataset("courses", courses, InsightDatasetKind.Courses)
 				.then(() => {
 					return facade.addDataset("courses-2", courses, InsightDatasetKind.Courses);
 				})
@@ -56,23 +56,27 @@ describe("InsightFacade", function () {
 
 		it("should add valid dataset", function () {
 			const validFile = getContentFromArchives("one-valid-course.zip");
-			return facade.addDataset("valid-course", validFile, InsightDatasetKind.Courses)
+			return facade
+				.addDataset("valid-course", validFile, InsightDatasetKind.Courses)
 				.then((addedIDs) => {
 					return facade.listDatasets();
 				})
 				.then((insightDatasets) => {
-					expect(insightDatasets).to.deep.equal([{
-						id: "valid-course",
-						kind: InsightDatasetKind.Courses,
-						numRows: 1,
-					}]);
+					expect(insightDatasets).to.deep.equal([
+						{
+							id: "valid-course",
+							kind: InsightDatasetKind.Courses,
+							numRows: 1,
+						},
+					]);
 					expect(insightDatasets).to.be.an.instanceOf(Array);
 					expect(insightDatasets).to.have.length(1);
 				});
 		});
 
 		it("rejects invalid id due to existing duplicate", function () {
-			return facade.addDataset("courses", courses, InsightDatasetKind.Courses)
+			return facade
+				.addDataset("courses", courses, InsightDatasetKind.Courses)
 				.then((addedIDs) => {
 					expect(addedIDs).to.deep.equal(["courses"]);
 					expect(addedIDs).to.be.an.instanceOf(Array);
@@ -85,12 +89,15 @@ describe("InsightFacade", function () {
 		});
 
 		it("rejects invalid id (only whitespace)", function () {
-			return facade.addDataset("   ", courses, InsightDatasetKind.Courses)
-				.then()
-				// Unsure if then() can be empty / need to throw something
-				.catch((err) => {
-					expect(err).to.be.instanceOf(InsightError);
-				});
+			return (
+				facade
+					.addDataset("   ", courses, InsightDatasetKind.Courses)
+					.then()
+					// Unsure if then() can be empty / need to throw something
+					.catch((err) => {
+						expect(err).to.be.instanceOf(InsightError);
+					})
+			);
 		});
 
 		it("should reject adding an id (only variations of whitespaces)", async function () {
@@ -103,21 +110,23 @@ describe("InsightFacade", function () {
 		});
 
 		it("should add datasets with ids that are not just whitespace", function () {
-			return facade.addDataset(" \n c   \t ", courses, InsightDatasetKind.Courses)
-				.then((insightDatasets) => {
-					expect(insightDatasets).to.be.an.instanceOf(Array);
-					expect(insightDatasets).to.have.length(1);
-					expect(insightDatasets).to.deep.equal([" \n c   \t "]);
-				});
+			return facade.addDataset(" \n c   \t ", courses, InsightDatasetKind.Courses).then((insightDatasets) => {
+				expect(insightDatasets).to.be.an.instanceOf(Array);
+				expect(insightDatasets).to.have.length(1);
+				expect(insightDatasets).to.deep.equal([" \n c   \t "]);
+			});
 		});
 
 		it("rejects invalid id (contains underscore)", function () {
-			return facade.addDataset("courses_reject", courses, InsightDatasetKind.Courses)
-				.then()
-				// Unsure if then() can be empty / need to throw something
-				.catch((err) => {
-					expect(err).to.be.instanceOf(InsightError);
-				});
+			return (
+				facade
+					.addDataset("courses_reject", courses, InsightDatasetKind.Courses)
+					.then()
+					// Unsure if then() can be empty / need to throw something
+					.catch((err) => {
+						expect(err).to.be.instanceOf(InsightError);
+					})
+			);
 		});
 
 		it("should reject adding an id has any number of underscores", async function () {
@@ -131,27 +140,28 @@ describe("InsightFacade", function () {
 
 		it("rejects invalid file type", function () {
 			const invalidFile = getContentFromArchives("invalidFile.json");
-			return facade.addDataset("courses_reject", invalidFile, InsightDatasetKind.Courses)
-				.then()
-				// Unsure if then() can be empty / need to throw something
-				.catch((err) => {
-					expect(err).to.be.instanceOf(InsightError);
-				});
+			return (
+				facade
+					.addDataset("courses_reject", invalidFile, InsightDatasetKind.Courses)
+					.then()
+					// Unsure if then() can be empty / need to throw something
+					.catch((err) => {
+						expect(err).to.be.instanceOf(InsightError);
+					})
+			);
 		});
 
 		it("rejects empty file", function () {
 			const emptyFile = getContentFromArchives("empty-courses.zip");
-			return facade.addDataset("courses_reject", emptyFile, InsightDatasetKind.Courses)
-				.then()
-				// Unsure if then() can be empty / need to throw something
-				.catch((err) => {
-					expect(err).to.be.instanceOf(InsightError);
-				});
-		});
-
-		it("should reject adding datasets with Rooms instead of Courses", function () {
-			const insightDatasets = facade.addDataset("courses", courses, InsightDatasetKind.Rooms);
-			return expect(insightDatasets).to.be.eventually.rejectedWith(InsightError);
+			return (
+				facade
+					.addDataset("courses_reject", emptyFile, InsightDatasetKind.Courses)
+					.then()
+					// Unsure if then() can be empty / need to throw something
+					.catch((err) => {
+						expect(err).to.be.instanceOf(InsightError);
+					})
+			);
 		});
 	});
 
@@ -164,7 +174,8 @@ describe("InsightFacade", function () {
 		});
 
 		it("should remove single dataset", function () {
-			return facade.addDataset("courses", courses, InsightDatasetKind.Courses)
+			return facade
+				.addDataset("courses", courses, InsightDatasetKind.Courses)
 				.then((addedIDs) => {
 					return facade.removeDataset("courses");
 				})
@@ -175,7 +186,8 @@ describe("InsightFacade", function () {
 		});
 
 		it("reject removal of non-existent dataset", function () {
-			return facade.addDataset("courses", courses, InsightDatasetKind.Courses)
+			return facade
+				.addDataset("courses", courses, InsightDatasetKind.Courses)
 				.then(() => {
 					return facade.removeDataset("non-existent-courses");
 				})
@@ -185,12 +197,15 @@ describe("InsightFacade", function () {
 		});
 
 		it("rejects removal of invalid id (only whitespace)", function () {
-			return facade.removeDataset("   ")
-				.then()
-				// Unsure if then() can be empty / need to throw something
-				.catch((err) => {
-					expect(err).to.be.instanceOf(InsightError);
-				});
+			return (
+				facade
+					.removeDataset("   ")
+					.then()
+					// Unsure if then() can be empty / need to throw something
+					.catch((err) => {
+						expect(err).to.be.instanceOf(InsightError);
+					})
+			);
 		});
 
 		it("should reject whitespace-only ids", async function () {
@@ -203,12 +218,15 @@ describe("InsightFacade", function () {
 		});
 
 		it("rejects removal of invalid id (contains underscore)", function () {
-			return facade.removeDataset("courses_reject")
-				.then()
-				// Unsure if then() can be empty / need to throw something
-				.catch((err) => {
-					expect(err).to.be.instanceOf(InsightError);
-				});
+			return (
+				facade
+					.removeDataset("courses_reject")
+					.then()
+					// Unsure if then() can be empty / need to throw something
+					.catch((err) => {
+						expect(err).to.be.instanceOf(InsightError);
+					})
+			);
 		});
 
 		it("should fulfill ids that are not just whitespace", async function () {
@@ -243,22 +261,26 @@ describe("InsightFacade", function () {
 			});
 		});
 		it("should list one dataset", function () {
-			return facade.addDataset("courses", courses, InsightDatasetKind.Courses)
+			return facade
+				.addDataset("courses", courses, InsightDatasetKind.Courses)
 				.then((addedIDs) => {
 					return facade.listDatasets();
 				})
 				.then((insightDatasets) => {
-					expect(insightDatasets).to.deep.equal([{
-						id: "courses",
-						kind: InsightDatasetKind.Courses,
-						numRows: 64612,
-					}]);
+					expect(insightDatasets).to.deep.equal([
+						{
+							id: "courses",
+							kind: InsightDatasetKind.Courses,
+							numRows: 64612,
+						},
+					]);
 					expect(insightDatasets).to.be.an.instanceOf(Array);
 					expect(insightDatasets).to.have.length(1);
 				});
 		});
 		it("should list multiple datasets", function () {
-			return facade.addDataset("courses", courses, InsightDatasetKind.Courses)
+			return facade
+				.addDataset("courses", courses, InsightDatasetKind.Courses)
 				.then(() => {
 					return facade.addDataset("courses-2", courses, InsightDatasetKind.Courses);
 				})
@@ -324,35 +346,47 @@ describe("InsightFacade", function () {
 	describe("Perform Query", function () {
 		let facade: IInsightFacade;
 
-		before(function () {
+		before(async function () {
 			clearDisk();
 			facade = new InsightFacade();
+			courses = getContentFromArchives("courses.zip");
 			courses2 = getContentFromArchives("ten-courses.zip");
-			return facade.addDataset("courses", courses, InsightDatasetKind.Courses).then(() => {
-				return facade.addDataset("courses-2", courses2, InsightDatasetKind.Courses);
-			});
+			await facade.addDataset("courses", courses, InsightDatasetKind.Courses);
+			await facade.addDataset("courses-2", courses2, InsightDatasetKind.Courses);
 		});
 
-		folderTest<Input, Output, Error>(
-			"Perform Query on Datasets",
-			(input: Input): Output => {
-				return facade.performQuery(input);
-			},
-			"./test/resources/json",
-			{
-				errorValidator: (error): error is Error =>
-					error === "InsightError" || error === "ResultTooLargeError",
-				assertOnError: ((actual, expected) => { // Check parameter order
-					if (expected === "InsightError") {
-						expect(actual).to.be.instanceof(InsightError);
-					} else if (expected === "ResultTooLargeError") {
-						expect(actual).to.be.instanceof(ResultTooLargeError);
-					} else {
-						// this should be unreachable
-						expect.fail("UNEXPECTED ERROR");
-					}
-				})
+		it("should run dynamic folder tests for performQuery", function () {
+			// Assert actual result is correct, regardless of order
+			function assertResult(actual: any, expected: Awaited<Output>): void | PromiseLike<void> {
+				expect(actual).to.have.deep.members(expected);
 			}
-		);
+
+			// Assert actual error is of expected type
+			function assertError(actual: any, expected: Error, input: Input): void | PromiseLike<void> {
+				if (expected === "InsightError") {
+					expect(actual).to.be.instanceof(InsightError);
+				} else if (expected === "ResultTooLargeError") {
+					expect(actual).to.be.instanceof(ResultTooLargeError);
+				} else if (expected === "NotFoundError") {
+					expect(actual).to.be.instanceof(NotFoundError);
+				} else {
+					// this should be unreachable
+					expect.fail("UNEXPECTED ERROR");
+				}
+			}
+
+			// Tests to dynamically check PerformQuery specifications
+			folderTest<Input, Output, Error>(
+				"PerformQuery Dynamic Tests",
+				(input: Input): Output => facade.performQuery(input),
+				"./test/resources/json",
+				{
+					errorValidator: (error): error is Error =>
+						error === "InsightError" || error === "ResultTooLargeError" || error === "NotFoundError",
+					assertOnError: assertError,
+					assertOnResult: assertResult,
+				}
+			);
+		});
 	});
 });
