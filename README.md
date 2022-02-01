@@ -34,3 +34,9 @@ In the project folder:
 ## Running and testing from an IDE
 
 IntelliJ Ultimate should be automatically configured the first time you open the project (IntelliJ Ultimate is a free download through their students program)
+
+## Development Schedule and Agreements
+
+1. Weekly meetings every *Sunday* at *2.00pm PST* for *1.5 hours* (subject to personal schedule constraints)
+
+1. Merge request approval window valid for *6 hours (maximum)* after one party has informed the other party
