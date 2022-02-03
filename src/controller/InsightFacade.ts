@@ -1,4 +1,62 @@
 import {IInsightFacade, InsightDataset, InsightDatasetKind, InsightError, InsightResult} from "./IInsightFacade";
+import * as fs from "fs";
+import JSZip from "jszip";
+import {IElement} from "../interface/IElement";
+import {ISection} from "../interface/ISection";
+
+
+// Returns true if a section is valid
+function validSection(sectionObj: any): boolean {
+	return sectionObj.subject != null && sectionObj.course != null && sectionObj.avg != null &&
+		sectionObj.professor != null && sectionObj.title != null && sectionObj.pass != null &&
+		sectionObj.fail != null && sectionObj.audit != null && sectionObj.id != null &&
+		sectionObj.year != null;
+}
+
+// Parses a JSON file containing course sections into an array of ISections
+function parseFile(fileContent: string, courseSections: ISection[], datasetSections: ISection[]): ISection[] {
+	let object = JSON.parse(fileContent);
+	object = object.result;
+	return object.forEach((sectionObj: any) => {
+		// add section to sections, if it is valid
+		if (validSection(sectionObj)) {
+			// create ISection from fileContent
+			const section: ISection = {
+				dept: sectionObj.subject,
+				id: sectionObj.course,
+				avg: sectionObj.avg,
+				instructor: sectionObj.professor,
+				title: sectionObj.title,
+				pass: sectionObj.pass,
+				fail: sectionObj.fail,
+				audit: sectionObj.audit,
+				uuid: sectionObj.id,
+				year: sectionObj.year
+			};
+			courseSections.push(section);
+			datasetSections.push(section);
+		}
+	}).then(() =>
+		courseSections);
+}
+
+function writeCourseSections(courseSections: ISection[], datasetPath: string, relativePath: string): void {
+	if (courseSections.length > 0) {
+		// create directory for this dataset's json files
+		fs.mkdirSync(datasetPath + "/courses", {recursive: true});
+		fs.writeFile(datasetPath + relativePath + ".json",
+			JSON.stringify(courseSections),
+			() => 0);
+	}
+}
+
+function getKeys(datasets: Map<string, IElement>) {
+	const keys: string[] = [];
+	datasets.forEach((value: IElement, key: string) => {
+		keys.push(key);
+	});
+	return keys;
+}
 
 /**
  * This is the main programmatic entry point for the project.
@@ -6,10 +64,10 @@ import {IInsightFacade, InsightDataset, InsightDatasetKind, InsightError, Insigh
  *
  */
 export default class InsightFacade implements IInsightFacade {
-	private mySet: Set<string>;
+	protected datasets: Map<string, IElement>;
 
 	constructor() {
-		this.mySet = new Set<string>();
+		this.datasets = new Map();
 		console.log("InsightFacadeImpl::init()");
 	}
 
@@ -34,61 +92,56 @@ export default class InsightFacade implements IInsightFacade {
 	 * @param kind
 	 */
 	public addDataset(id: string, content: string, kind: InsightDatasetKind): Promise<string[]> {
-		if (id.search("_+") > -1) {
+		if (this.datasets.has(id)) {
+			return Promise.reject(new InsightError("The dataset already exists"));
+		} else if (id.search("_+") > -1) {
 			return Promise.reject(new InsightError("The dataset contained underscore(s)"));
 		} else if (id.search("[^\\t\\r\\n\\v\\f]+") > -1) {
+			const datasetPath = "./data/" + id;
+			const datasetSections: ISection[] = [];
+			let testZip = new JSZip();
 
-			// try {
-			// 	fs.mkdir("./data", function () {
-			// 		let testZip = new JSZip();
-			// 		return testZip
-			// 			.loadAsync(content, {base64: true})
-			// 			.then(function (zip) {
-			// 				fs.mkdir("./data/" + id, (err) => {
-			// 					fs.mkdir("./data/" + id + "/courses", (err2) => {
-			// 						zip.forEach((relativePath, file) => {
-			// 							if (!file.dir) {
-			// 								// todo check for valid section etc
-			// 								file.async("string").then((fileContents) => {
-			// 									// todo figure out how to parse string into what we want
-			// 									let jsonContent = JSON.parse(fileContents);
-			// 									const data = {
-			// 										title: jsonContent.Title,
-			// 										id: jsonContent.id,
-			// 										instructor: jsonContent.Professor,
-			// 										audit: jsonContent.Audit,
-			// 										year: jsonContent.Year,
-			// 										pass: jsonContent.Pass,
-			// 										fail: jsonContent.Fail,
-			// 										avg: jsonContent.Avg,
-			// 										subject: jsonContent.Subject,
-			// 										uuid: jsonContent.id + jsonContent.Year + jsonContent.isntructor
-			// 									};
-			// 									fs.writeFile(
-			// 										relativePath + ".json",
-			// 										fileContents,
-			// 										{encoding: "base64"},
-			// 										function () {
-			// 											console.log(fileContents);
-			// 										}
-			// 									);
-			// 								});
-			//
-			// 							}
-			//
-			// 						});
-			// 					});
-			// 				});
-			// 			});
-			// 	});
-			//
-			// } catch (error) {
-			// 	return Promise.reject(InsightError);
-			// }
+			// parse zip contents and write to disk
+			return testZip.loadAsync(content, {base64: true})
+				.then((zip) => {
+					const courseSections: ISection[] = [];
+					// parse each file in the zip
+					zip.forEach((relativePath, file) => {
+						if (!file.dir) {
+							file.async("string")
+								.then((fileContent) => {
+									// parse file
+									// lowercase string for robust key handling
+									parseFile(fileContent.toLocaleLowerCase(),
+										courseSections,
+										datasetSections);
 
-			return Promise.resolve([id]);
+									// write contents of this course's sections to disk
+									writeCourseSections(courseSections, datasetPath, relativePath);
+								});
+						}
+					});
+				}).then(() => {
+					if (datasetSections.length === 0) {
+						// case where no valid sections were found
+						return Promise.reject(new InsightError("The file did not contain any valid sections"));
+					} else {
+						// create IElement to add to this.datasets
+						this.datasets.set(id, {
+							sections: datasetSections,
+							info: {
+								id: id,
+								kind: InsightDatasetKind.Courses,
+								numRows: datasetSections.length
+							}
+						});
+						// grab keys and return
+						let keys = getKeys(this.datasets);
+						return Promise.resolve(keys);
+					}
+				});
 		} else {
-			return Promise.reject(new InsightError("The dataset contained only whitespace or underscore chars"));
+			return Promise.reject(new InsightError("The dataset contained only whitespace"));
 		}
 	}
 
