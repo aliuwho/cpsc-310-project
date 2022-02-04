@@ -61,6 +61,27 @@ function getKeys(datasets: Map<string, IElement>) {
 	return keys;
 }
 
+function getCourseSections(zip: JSZip, datasetSections: ISection[], datasetPath: string): ISection[] {
+	const courseSections: ISection[] = [];
+
+	zip.forEach((relativePath, file) => {
+		if (!file.dir) {
+			file.async("string")
+				.then((fileContent) => {
+					// parse file
+					// lowercase string for robust key handling
+					let temp = parseFile(fileContent.toLocaleLowerCase(),
+						courseSections,
+						datasetSections);
+
+					// write contents of this course's sections to disk
+					writeCourseSections(temp, datasetPath, relativePath);
+				});
+		}
+	});
+	return courseSections;
+}
+
 /**
  * This is the main programmatic entry point for the project.
  * Method documentation is in IInsightFacade
@@ -99,7 +120,7 @@ export default class InsightFacade implements IInsightFacade {
 			return Promise.reject(new InsightError("The dataset already exists"));
 		} else if (id.search("_+") > -1) {
 			return Promise.reject(new InsightError("The dataset contained underscore(s)"));
-		} else if (id.search("[^\\t\\r\\n\\v\\f]+") > -1) {
+		} else if (id.search("[^\\t\\r\\n\\v\\f ]+") > -1) {
 			const datasetPath = "./data/" + id;
 			const datasetSections: ISection[] = [];
 			let testZip = new JSZip();
@@ -110,33 +131,21 @@ export default class InsightFacade implements IInsightFacade {
 			// parse zip contents and write to disk
 			return testZip.loadAsync(content, {base64: true})
 				.then((zip) => {
-					const courseSections: ISection[] = [];
 					// parse each file in the zip
 					// need to change to a map
 					// map means we need to return an array of values
 					// what values do we want to return?
 					// after which, should we iterate through and push them to the total dataset?
-					zip.forEach((relativePath, file) => {
-						if (!file.dir) {
-							file.async("string")
-								.then((fileContent) => {
-									// parse file
-									// lowercase string for robust key handling
-									let temp = parseFile(fileContent.toLocaleLowerCase(),
-										courseSections,
-										datasetSections);
-
-									// write contents of this course's sections to disk
-									writeCourseSections(temp, datasetPath, relativePath);
-								});
-						}
+					return Promise.all(getCourseSections(zip, datasetSections, datasetPath)).then((courseSections) => {
+						// if (courseSections.length === 0) {
+						// 	// case where no valid sections were found
+						// 	return Promise.reject(new InsightError("The file did not contain any valid sections"));
+						// } else {
+						// create IElement to add to this.datasets
 					});
 
-					// if (datasetSections.length === 0) {
-					// 	// case where no valid sections were found
-					// 	return Promise.reject(new InsightError("The file did not contain any valid sections"));
-					// } else {
-					// create IElement to add to this.datasets
+
+				}).then((courseSections) => {
 					this.datasets.set(id, {
 						sections: datasetSections,
 						info: {
