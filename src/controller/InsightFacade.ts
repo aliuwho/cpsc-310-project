@@ -1,8 +1,8 @@
 import {IInsightFacade, InsightDataset, InsightDatasetKind, InsightError, InsightResult} from "./IInsightFacade";
 import * as fs from "fs";
 import JSZip from "jszip";
-import {IElement} from "../interface/IElement";
-import {ISection} from "../interface/ISection";
+import {IElement} from "./interface/IElement";
+import {ISection} from "./interface/ISection";
 
 
 // Returns true if a section is valid
@@ -13,11 +13,12 @@ function validSection(sectionObj: any): boolean {
 		sectionObj.year != null;
 }
 
+
 // Parses a JSON file containing course sections into an array of ISections
 function parseFile(fileContent: string, courseSections: ISection[], datasetSections: ISection[]): ISection[] {
 	let object = JSON.parse(fileContent);
 	object = object.result;
-	return object.forEach((sectionObj: any) => {
+	let ret: ISection[] = object.forEach((sectionObj: any) => {
 		// add section to sections, if it is valid
 		if (validSection(sectionObj)) {
 			// create ISection from fileContent
@@ -33,21 +34,23 @@ function parseFile(fileContent: string, courseSections: ISection[], datasetSecti
 				uuid: sectionObj.id,
 				year: sectionObj.year
 			};
+			// remove this from the function
 			courseSections.push(section);
 			datasetSections.push(section);
 		}
 	}).then(() =>
 		courseSections);
+	// return if valid or not
+	return ret;
 }
 
 function writeCourseSections(courseSections: ISection[], datasetPath: string, relativePath: string): void {
-	if (courseSections.length > 0) {
-		// create directory for this dataset's json files
-		fs.mkdirSync(datasetPath + "/courses", {recursive: true});
-		fs.writeFile(datasetPath + relativePath + ".json",
-			JSON.stringify(courseSections),
-			() => 0);
-	}
+	// if (courseSections.length > 0) {
+	fs.writeFile(datasetPath + relativePath + ".json",
+		JSON.stringify(courseSections),
+		() => 0);
+	console.log(JSON.stringify(courseSections));
+	// }
 }
 
 function getKeys(datasets: Map<string, IElement>) {
@@ -101,44 +104,51 @@ export default class InsightFacade implements IInsightFacade {
 			const datasetSections: ISection[] = [];
 			let testZip = new JSZip();
 
+			// create directory for this dataset's json files
+			fs.mkdirSync(datasetPath + "/courses", {recursive: true});
+
 			// parse zip contents and write to disk
 			return testZip.loadAsync(content, {base64: true})
 				.then((zip) => {
 					const courseSections: ISection[] = [];
 					// parse each file in the zip
+					// need to change to a map
+					// map means we need to return an array of values
+					// what values do we want to return?
+					// after which, should we iterate through and push them to the total dataset?
 					zip.forEach((relativePath, file) => {
 						if (!file.dir) {
 							file.async("string")
 								.then((fileContent) => {
 									// parse file
 									// lowercase string for robust key handling
-									parseFile(fileContent.toLocaleLowerCase(),
+									let temp = parseFile(fileContent.toLocaleLowerCase(),
 										courseSections,
 										datasetSections);
 
 									// write contents of this course's sections to disk
-									writeCourseSections(courseSections, datasetPath, relativePath);
+									writeCourseSections(temp, datasetPath, relativePath);
 								});
 						}
 					});
-				}).then(() => {
-					if (datasetSections.length === 0) {
-						// case where no valid sections were found
-						return Promise.reject(new InsightError("The file did not contain any valid sections"));
-					} else {
-						// create IElement to add to this.datasets
-						this.datasets.set(id, {
-							sections: datasetSections,
-							info: {
-								id: id,
-								kind: InsightDatasetKind.Courses,
-								numRows: datasetSections.length
-							}
-						});
-						// grab keys and return
-						let keys = getKeys(this.datasets);
-						return Promise.resolve(keys);
-					}
+
+					// if (datasetSections.length === 0) {
+					// 	// case where no valid sections were found
+					// 	return Promise.reject(new InsightError("The file did not contain any valid sections"));
+					// } else {
+					// create IElement to add to this.datasets
+					this.datasets.set(id, {
+						sections: datasetSections,
+						info: {
+							id: id,
+							kind: InsightDatasetKind.Courses,
+							numRows: datasetSections.length
+						}
+					});
+					// grab keys and return
+					let keys = getKeys(this.datasets);
+					return Promise.resolve(keys);
+					// }
 				});
 		} else {
 			return Promise.reject(new InsightError("The dataset contained only whitespace"));
