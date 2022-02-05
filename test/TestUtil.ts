@@ -7,7 +7,7 @@ function getContentFromArchives(name: string): string {
 }
 
 function clearDisk(): void{
-	fs.removeSync(persistDir);
+	// fs.removeSync(persistDir);
 }
 
 export {persistDir, getContentFromArchives, clearDisk};
