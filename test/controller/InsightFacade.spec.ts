@@ -6,10 +6,12 @@ import {
 	NotFoundError,
 	ResultTooLargeError,
 } from "../../src/controller/IInsightFacade";
-import InsightFacade from "../../src/controller/InsightFacade";
+import InsightFacade, {writeCourseSections} from "../../src/controller/InsightFacade";
 import {expect} from "chai";
 import {clearDisk, getContentFromArchives} from "../TestUtil";
 import {folderTest} from "@ubccpsc310/folder-test";
+import {ISection} from "../../src/controller/interface/ISection";
+import {existsSync, mkdirSync} from "fs";
 
 // For folderTest
 type Input = unknown;
@@ -22,6 +24,59 @@ describe("InsightFacade", function () {
 
 	before(function () {
 		courses = getContentFromArchives("courses.zip");
+	});
+
+	describe("Add Datasets Helper Tests", function () {
+		let courseSections: ISection[];
+		before(function () {
+			const section1: ISection = {
+				dept: "cpsc",
+				id: "101",
+				avg: 8.9,
+				instructor: "mike gelbart",
+				title: "intro to computer science",
+				pass: 23,
+				fail: 12,
+				audit: 2,
+				uuid: "1010",
+				year: 2020
+			};
+			const section2: ISection = {
+				dept: "econ",
+				id: "101",
+				avg: 100,
+				instructor: "mr. gateman",
+				title: "economic systems",
+				pass: 2,
+				fail: 1,
+				audit: 20,
+				uuid: "110",
+				year: 2022
+			};
+			const section3: ISection = {
+				dept: "stat",
+				id: "421",
+				avg: 69.2,
+				instructor: "wolf skert",
+				title: "statistics",
+				pass: 7,
+				fail: 8,
+				audit: 6,
+				uuid: "8023",
+				year: 1973
+			};
+			courseSections = [section1, section2, section3];
+			clearDisk();
+			mkdirSync("./data/test");
+		});
+
+		it("should write valid course sections", function () {
+			let path: string = "./data/test/writeValidSections.json";
+			writeCourseSections(courseSections, path)
+				.then(() => {
+					expect(existsSync(path)).to.equal(true);
+				});
+		});
 	});
 
 	describe("Add Datasets", function () {
@@ -341,7 +396,6 @@ describe("InsightFacade", function () {
 			}
 		});
 	});
-
 
 	describe("Perform Query", function () {
 		let facade: IInsightFacade;

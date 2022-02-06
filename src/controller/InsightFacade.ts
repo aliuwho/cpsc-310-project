@@ -6,16 +6,15 @@ import {ISection} from "./interface/ISection";
 
 
 // Returns true if a section is valid
-function validSection(sectionObj: any): boolean {
+export function validSection(sectionObj: any): boolean {
 	return sectionObj.subject != null && sectionObj.course != null && sectionObj.avg != null &&
 		sectionObj.professor != null && sectionObj.title != null && sectionObj.pass != null &&
 		sectionObj.fail != null && sectionObj.audit != null && sectionObj.id != null &&
 		sectionObj.year != null;
 }
 
-
 // Parses a JSON file containing course sections into an array of ISections
-function parseFileContent(fileContent: string): Promise<ISection[]> {
+export function parseFileContent(fileContent: string): Promise<ISection[]> {
 	let object = JSON.parse(fileContent);
 	object = object.result;
 	// return if valid or not
@@ -43,16 +42,14 @@ function parseFileContent(fileContent: string): Promise<ISection[]> {
 	return Promise.all(promises);
 }
 
-function writeCourseSections(courseSections: ISection[], datasetPath: string, relativePath: string): void {
-	// if (courseSections.length > 0) {
-	fs.writeFile(datasetPath + relativePath + ".json",
+export async function writeCourseSections(courseSections: ISection[], filePath: string): Promise<void> {
+	await fs.writeFile(filePath,
 		JSON.stringify(courseSections),
 		() => 0);
-	console.log(JSON.stringify(courseSections));
-	// }
+	return Promise.resolve();
 }
 
-function getKeys(datasets: Map<string, IElement>) {
+export function getKeys(datasets: Map<string, IElement>) {
 	const keys: string[] = [];
 	datasets.forEach((value: IElement, key: string) => {
 		keys.push(key);
@@ -60,14 +57,17 @@ function getKeys(datasets: Map<string, IElement>) {
 	return keys;
 }
 
-function parseFile(relativePath: string, file: JSZip.JSZipObject, datasetPath: string): Promise<ISection[]> {
+export function parseFile(relativePath: string, file: JSZip.JSZipObject, datasetPath: string): Promise<ISection[]> {
 	return file.async("string").then(async (fileContent) => {
 		// parse file's contents
 		// lowercase string for robust key handling
 		const courseSections: ISection[] = [];
 		return parseFileContent(fileContent.toLocaleLowerCase()).then((awaited) => {
 			courseSections.concat(awaited);
-			writeCourseSections(courseSections, datasetPath, relativePath);
+			if (awaited.length > 0) {
+				writeCourseSections(courseSections, datasetPath + relativePath + ".json");
+
+			}
 			return Promise.all<ISection[]>(courseSections);
 		});
 	});
