@@ -6,12 +6,13 @@ import {
 	NotFoundError,
 	ResultTooLargeError,
 } from "../../src/controller/IInsightFacade";
-import InsightFacade, {writeCourseSections} from "../../src/controller/InsightFacade";
+import InsightFacade, {getKeys, writeCourseSections} from "../../src/controller/InsightFacade";
 import {expect} from "chai";
 import {clearDisk, getContentFromArchives} from "../TestUtil";
 import {folderTest} from "@ubccpsc310/folder-test";
 import {ISection} from "../../src/controller/interface/ISection";
 import {existsSync, mkdirSync} from "fs";
+import {IElement} from "../../src/controller/interface/IElement";
 
 // For folderTest
 type Input = unknown;
@@ -27,47 +28,53 @@ describe("InsightFacade", function () {
 	});
 
 	describe("Add Datasets Helper Tests", function () {
-		let courseSections: ISection[];
-		before(function () {
-			const section1: ISection = {
-				dept: "cpsc",
-				id: "101",
-				avg: 8.9,
-				instructor: "mike gelbart",
-				title: "intro to computer science",
-				pass: 23,
-				fail: 12,
-				audit: 2,
-				uuid: "1010",
-				year: 2020
-			};
-			const section2: ISection = {
-				dept: "econ",
-				id: "101",
-				avg: 100,
-				instructor: "mr. gateman",
-				title: "economic systems",
-				pass: 2,
-				fail: 1,
-				audit: 20,
-				uuid: "110",
-				year: 2022
-			};
-			const section3: ISection = {
-				dept: "stat",
-				id: "421",
-				avg: 69.2,
-				instructor: "wolf skert",
-				title: "statistics",
-				pass: 7,
-				fail: 8,
-				audit: 6,
-				uuid: "8023",
-				year: 1973
-			};
-			courseSections = [section1, section2, section3];
+		let testDatasets: Map<string, IElement>;
+		const section1: ISection = {
+			dept: "cpsc",
+			id: "101",
+			avg: 8.9,
+			instructor: "mike gelbart",
+			title: "intro to computer science",
+			pass: 23,
+			fail: 12,
+			audit: 2,
+			uuid: "1010",
+			year: 2020
+		};
+		const section2: ISection = {
+			dept: "econ",
+			id: "101",
+			avg: 100,
+			instructor: "mr. gateman",
+			title: "economic systems",
+			pass: 2,
+			fail: 1,
+			audit: 20,
+			uuid: "110",
+			year: 2022
+		};
+		const section3: ISection = {
+			dept: "stat",
+			id: "421",
+			avg: 69.2,
+			instructor: "wolf skert",
+			title: "statistics",
+			pass: 7,
+			fail: 8,
+			audit: 6,
+			uuid: "8023",
+			year: 1973
+		};
+		const courseSections: ISection[] = [section1, section2, section3];
+
+		beforeEach(function () {
+			testDatasets = new Map();
 			clearDisk();
-			mkdirSync("./data/test");
+			try {
+				mkdirSync("./data/test");
+			} catch (error) {
+				// do nothing if dir already exists
+			}
 		});
 
 		it("should write valid course sections", function () {
@@ -76,6 +83,31 @@ describe("InsightFacade", function () {
 				.then(() => {
 					expect(existsSync(path)).to.equal(true);
 				});
+		});
+
+		it("should return the keys for a dataset structure", function () {
+			const elem1: IElement = {
+				sections: courseSections,
+				info: {id: "testElem", kind: InsightDatasetKind.Courses, numRows: 3}
+			};
+			testDatasets.set("testElem", elem1);
+			let result = getKeys(testDatasets);
+			expect(result).to.deep.equal(["testElem"]);
+		});
+
+		it("should return the keys for multiple dataset structures", function () {
+			const elem1: IElement = {
+				sections: courseSections,
+				info: {id: "testElem", kind: InsightDatasetKind.Courses, numRows: 3}
+			};
+			testDatasets.set("testElem", elem1);
+			const elem2: IElement = {
+				sections: courseSections,
+				info: {id: "testElem2", kind: InsightDatasetKind.Courses, numRows: 3}
+			};
+			testDatasets.set("testElem2", elem2);
+			let result = getKeys(testDatasets);
+			expect(result).to.deep.equal(["testElem", "testElem2"]);
 		});
 	});
 
