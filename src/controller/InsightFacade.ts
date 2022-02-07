@@ -13,7 +13,7 @@ export function validSection(sectionObj: any): boolean {
 		sectionObj.year != null;
 }
 
-function parseSectionObj(sectionObj: any) {
+async function parseSectionObj(sectionObj: any): Promise<ISection> {
 	// create ISection from fileContent
 	const section: ISection = {
 		dept: sectionObj.subject,
@@ -32,7 +32,7 @@ function parseSectionObj(sectionObj: any) {
 }
 
 // Parses a JSON file containing course sections into an array of ISections
-export function parseFileContent(fileContent: string): Promise<ISection[]> {
+export async function parseFileContent(fileContent: string): Promise<ISection[]> {
 	let object = JSON.parse(fileContent);
 	object = object.result;
 	// return if valid or not
@@ -66,9 +66,9 @@ export async function parseFile(file: JSZip.JSZipObject, filePath: string): Prom
 	return file.async("string").then(async (fileContent) => {
 		// parse file's contents
 		// lowercase string for robust key handling
-		const courseSections: ISection[] = [];
+		let courseSections: ISection[] = [];
 		return parseFileContent(fileContent.toLocaleLowerCase()).then((awaited) => {
-			courseSections.concat(awaited);
+			courseSections = courseSections.concat(awaited);
 			if (awaited.length > 0) {
 				writeCourseSections(courseSections, filePath);
 			}
@@ -127,10 +127,10 @@ export default class InsightFacade implements IInsightFacade {
 				.then((loadedZip) => {
 					let folderZip = loadedZip.folder("courses");
 					if (folderZip != null) {
-						const promisedSections: ISection[] = []; // need to somehow fix it so length is not 0 >:(
+						let promisedSections: any[] = []; // need to somehow fix it so length is not 0 >:(
 						folderZip.forEach(async function (relativePath, file) {
-							let courseSections = await parseFile(file, datasetPath + relativePath + ".json");
-							promisedSections.concat(courseSections);
+							promisedSections = promisedSections.concat(parseFile(file,
+								datasetPath + relativePath + ".json"));
 						});
 
 						return Promise.all(promisedSections).then((awaitedSections) => {
