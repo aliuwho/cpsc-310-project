@@ -1,4 +1,11 @@
-import {IInsightFacade, InsightDataset, InsightDatasetKind, InsightError, InsightResult} from "./IInsightFacade";
+import {
+	IInsightFacade,
+	InsightDataset,
+	InsightDatasetKind,
+	InsightError,
+	InsightResult,
+	NotFoundError
+} from "./IInsightFacade";
 import * as fs from "fs";
 import JSZip from "jszip";
 import {IElement} from "./interface/IElement";
@@ -161,7 +168,17 @@ export default class InsightFacade implements IInsightFacade {
 	}
 
 	public removeDataset(id: string): Promise<string> {
-		return Promise.reject("Not implemented.");
+		if (id.search("_+") > -1) {
+			return Promise.reject(new InsightError("The dataset contained underscore(s)"));
+		} else if (id.search("[^\\t\\r\\n\\v\\f ]+") > -1) {
+			if (this.datasets.delete(id)) {
+				return Promise.resolve(id);
+			} else {
+				return Promise.reject(new NotFoundError("The dataset was not found"));
+			}
+		} else {
+			return Promise.reject(new InsightError("The dataset contained only whitespace"));
+		}
 	}
 
 	public performQuery(query: unknown): Promise<InsightResult[]> {
