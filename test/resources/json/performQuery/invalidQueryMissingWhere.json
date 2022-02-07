@@ -1,0 +1,16 @@
+{
+  "title": "query missing Where field throws InsightError",
+  "input": {
+    "OPTIONS": {
+      "COLUMNS": [
+        "courses_dept",
+        "courses_id",
+        "courses_title"
+      ],
+      "ORDER": "courses_id"
+    }
+  },
+  "errorExpected": true,
+  "verbose": false,
+  "expected": "InsightError"
+}
