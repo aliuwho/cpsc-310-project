@@ -6,13 +6,14 @@ import {
 	NotFoundError,
 	ResultTooLargeError,
 } from "../../src/controller/IInsightFacade";
-import InsightFacade, {getKeys, writeCourseSections} from "../../src/controller/InsightFacade";
+import InsightFacade, {getKeys, parseFileContent, writeCourseSections} from "../../src/controller/InsightFacade";
 import {expect} from "chai";
 import {clearDisk, getContentFromArchives} from "../TestUtil";
 import {folderTest} from "@ubccpsc310/folder-test";
 import {ISection} from "../../src/controller/interface/ISection";
 import {existsSync, mkdirSync} from "fs";
 import {IElement} from "../../src/controller/interface/IElement";
+import * as fs from "fs-extra";
 
 // For folderTest
 type Input = unknown;
@@ -77,38 +78,54 @@ describe("InsightFacade", function () {
 			}
 		});
 
-		it("should write valid course sections", function () {
-			let path: string = "./data/test/writeValidSections.json";
-			writeCourseSections(courseSections, path)
-				.then(() => {
-					expect(existsSync(path)).to.equal(true);
+		describe("writeCourseSections tests", function () {
+			it("should write valid course sections", function () {
+				let path: string = "./data/test/writeValidSections.json";
+				writeCourseSections(courseSections, path)
+					.then(() => {
+						expect(existsSync(path)).to.equal(true);
+					});
+			});
+		});
+
+		describe("getKeys tests", function () {
+			it("should return the keys for a dataset structure", function () {
+				const elem1: IElement = {
+					sections: courseSections,
+					info: {id: "testElem", kind: InsightDatasetKind.Courses, numRows: 3}
+				};
+				testDatasets.set("testElem", elem1);
+				let result = getKeys(testDatasets);
+				expect(result).to.deep.equal(["testElem"]);
+			});
+
+			it("should return the keys for multiple dataset structures", function () {
+				const elem1: IElement = {
+					sections: courseSections,
+					info: {id: "testElem", kind: InsightDatasetKind.Courses, numRows: 3}
+				};
+				testDatasets.set("testElem", elem1);
+				const elem2: IElement = {
+					sections: courseSections,
+					info: {id: "testElem2", kind: InsightDatasetKind.Courses, numRows: 3}
+				};
+				testDatasets.set("testElem2", elem2);
+				let result = getKeys(testDatasets);
+				expect(result).to.deep.equal(["testElem", "testElem2"]);
+			});
+		});
+
+		describe("parseFileContent tests", function () {
+			it("should parse a valid JSON file", function () {
+				let data = fs.readFileSync("test/resources/json/addDatasetHelper/parseValidFile.json")
+					.toString();
+				parseFileContent(data).then((output) => {
+					expect(output).to.eventually.have.length(3);
+					expect(output).to.eventually.have.deep.members(courseSections);
 				});
+			});
 		});
 
-		it("should return the keys for a dataset structure", function () {
-			const elem1: IElement = {
-				sections: courseSections,
-				info: {id: "testElem", kind: InsightDatasetKind.Courses, numRows: 3}
-			};
-			testDatasets.set("testElem", elem1);
-			let result = getKeys(testDatasets);
-			expect(result).to.deep.equal(["testElem"]);
-		});
-
-		it("should return the keys for multiple dataset structures", function () {
-			const elem1: IElement = {
-				sections: courseSections,
-				info: {id: "testElem", kind: InsightDatasetKind.Courses, numRows: 3}
-			};
-			testDatasets.set("testElem", elem1);
-			const elem2: IElement = {
-				sections: courseSections,
-				info: {id: "testElem2", kind: InsightDatasetKind.Courses, numRows: 3}
-			};
-			testDatasets.set("testElem2", elem2);
-			let result = getKeys(testDatasets);
-			expect(result).to.deep.equal(["testElem", "testElem2"]);
-		});
 	});
 
 	describe("Add Datasets", function () {
@@ -465,7 +482,7 @@ describe("InsightFacade", function () {
 			folderTest<Input, Output, Error>(
 				"PerformQuery Dynamic Tests",
 				(input: Input): Output => facade.performQuery(input),
-				"./test/resources/json",
+				"./test/resources/json/performQuery",
 				{
 					errorValidator: (error): error is Error =>
 						error === "InsightError" || error === "ResultTooLargeError" || error === "NotFoundError",
