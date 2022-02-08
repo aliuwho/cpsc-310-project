@@ -172,34 +172,33 @@ describe("InsightFacade", function () {
 					}
 				});
 			});
-		});
-
-		it("should parse a zip with multiple valid sections", function () {
-			let zip = getContentFromArchives("validJsonThreeSections.zip");
-			let jsZip = new JSZip();
-			return jsZip.loadAsync(zip, {base64: true}).then((jsZip2) => {
-				let obj = jsZip2.file("validJsonThreeSections.json");
-				expect(obj).to.be.not.null;
-				if (obj) {
-					parseFile(obj, "./data/validJson/courses/aanb002.json").then((output) => {
-						expect(output).to.have.length(3);
-						expect(output).to.have.deep.members(courseSections);
-					});
-				}
+			it("should parse a zip with multiple valid sections", function () {
+				let zip = getContentFromArchives("validJsonThreeSections.zip");
+				let jsZip = new JSZip();
+				return jsZip.loadAsync(zip, {base64: true}).then((jsZip2) => {
+					let obj = jsZip2.file("validJsonThreeSections.json");
+					expect(obj).to.be.not.null;
+					if (obj) {
+						parseFile(obj, "./data/validJson/courses/aanb002.json").then((output) => {
+							expect(output).to.have.length(3);
+							expect(output).to.have.deep.members(courseSections);
+						});
+					}
+				});
 			});
-		});
 
-		it("should not parse from an invalid section in a zip", function () {
-			let zip = getContentFromArchives("invalidJson.zip");
-			let jsZip = new JSZip();
-			return jsZip.loadAsync(zip, {base64: true}).then((jsZip2) => {
-				let obj = jsZip2.file("invalidJson.json");
-				expect(obj).to.be.not.null;
-				if (obj) {
-					parseFile(obj, "./data/validJson/courses/aanb002.json").then((output) => {
-						expect(output).to.have.length(0);
-					});
-				}
+			it("should not parse from an invalid section in a zip", function () {
+				let zip = getContentFromArchives("invalidJson.zip");
+				let jsZip = new JSZip();
+				return jsZip.loadAsync(zip, {base64: true}).then((jsZip2) => {
+					let obj = jsZip2.file("invalidJson.json");
+					expect(obj).to.be.not.null;
+					if (obj) {
+						parseFile(obj, "./data/validJson/courses/aanb002.json").then((output) => {
+							expect(output).to.have.length(0);
+						});
+					}
+				});
 			});
 		});
 	});
