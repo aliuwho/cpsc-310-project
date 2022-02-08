@@ -6,7 +6,7 @@ import {
 	NotFoundError,
 	ResultTooLargeError,
 } from "../../src/controller/IInsightFacade";
-import InsightFacade, {getKeys, parseFileContent, writeCourseSections} from "../../src/controller/InsightFacade";
+import InsightFacade from "../../src/controller/InsightFacade";
 import {expect} from "chai";
 import {clearDisk, getContentFromArchives} from "../TestUtil";
 import {folderTest} from "@ubccpsc310/folder-test";
@@ -14,6 +14,8 @@ import {ISection} from "../../src/controller/interface/ISection";
 import {existsSync, mkdirSync} from "fs";
 import {IElement} from "../../src/controller/interface/IElement";
 import * as fs from "fs-extra";
+import {getKeys, writeCourseSections} from "../../src/controller/utility/IUtility";
+import {parseFileContent} from "../../src/controller/utility/IParse";
 
 // For folderTest
 type Input = unknown;
@@ -28,7 +30,7 @@ describe("InsightFacade", function () {
 		courses = getContentFromArchives("courses.zip");
 	});
 
-	describe("Add Datasets Helper Tests", function () {
+	describe("Utility Tests", function () {
 		let testDatasets: Map<string, IElement>;
 		const section1: ISection = {
 			dept: "cpsc",
@@ -40,7 +42,7 @@ describe("InsightFacade", function () {
 			fail: 12,
 			audit: 2,
 			uuid: "1010",
-			year: 2020
+			year: 2020,
 		};
 		const section2: ISection = {
 			dept: "econ",
@@ -52,7 +54,7 @@ describe("InsightFacade", function () {
 			fail: 1,
 			audit: 20,
 			uuid: "110",
-			year: 2022
+			year: 2022,
 		};
 		const section3: ISection = {
 			dept: "stat",
@@ -64,7 +66,7 @@ describe("InsightFacade", function () {
 			fail: 8,
 			audit: 6,
 			uuid: "8023",
-			year: 1973
+			year: 1973,
 		};
 		const courseSections: ISection[] = [section1, section2, section3];
 
@@ -81,10 +83,9 @@ describe("InsightFacade", function () {
 		describe("writeCourseSections tests", function () {
 			it("should write valid course sections", function () {
 				let path: string = "./data/test/writeValidSections.json";
-				writeCourseSections(courseSections, path)
-					.then(() => {
-						expect(existsSync(path)).to.equal(true);
-					});
+				writeCourseSections(courseSections, path).then(() => {
+					expect(existsSync(path)).to.equal(true);
+				});
 			});
 		});
 
@@ -92,7 +93,7 @@ describe("InsightFacade", function () {
 			it("should return the keys for a dataset structure", function () {
 				const elem1: IElement = {
 					sections: courseSections,
-					info: {id: "testElem", kind: InsightDatasetKind.Courses, numRows: 3}
+					info: {id: "testElem", kind: InsightDatasetKind.Courses, numRows: 3},
 				};
 				testDatasets.set("testElem", elem1);
 				let result = getKeys(testDatasets);
@@ -102,12 +103,12 @@ describe("InsightFacade", function () {
 			it("should return the keys for multiple dataset structures", function () {
 				const elem1: IElement = {
 					sections: courseSections,
-					info: {id: "testElem", kind: InsightDatasetKind.Courses, numRows: 3}
+					info: {id: "testElem", kind: InsightDatasetKind.Courses, numRows: 3},
 				};
 				testDatasets.set("testElem", elem1);
 				const elem2: IElement = {
 					sections: courseSections,
-					info: {id: "testElem2", kind: InsightDatasetKind.Courses, numRows: 3}
+					info: {id: "testElem2", kind: InsightDatasetKind.Courses, numRows: 3},
 				};
 				testDatasets.set("testElem2", elem2);
 				let result = getKeys(testDatasets);
@@ -117,15 +118,13 @@ describe("InsightFacade", function () {
 
 		describe("parseFileContent tests", function () {
 			it("should parse a valid JSON file", function () {
-				let data = fs.readFileSync("test/resources/json/addDatasetHelper/parseValidFile.json")
-					.toString();
+				let data = fs.readFileSync("test/resources/json/addDatasetHelper/parseValidFile.json").toString();
 				parseFileContent(data).then((output) => {
 					expect(output).to.eventually.have.length(3);
 					expect(output).to.eventually.have.deep.members(courseSections);
 				});
 			});
 		});
-
 	});
 
 	describe("Add Datasets", function () {
@@ -402,7 +401,7 @@ describe("InsightFacade", function () {
 							id: "courses-2",
 							kind: InsightDatasetKind.Courses,
 							numRows: 64612,
-						}
+						},
 					];
 					expect(insightDatasets).to.be.an.instanceOf(Array);
 					expect(insightDatasets).to.have.length(2);

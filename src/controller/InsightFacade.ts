@@ -4,93 +4,13 @@ import {
 	InsightDatasetKind,
 	InsightError,
 	InsightResult,
-	NotFoundError
+	NotFoundError,
 } from "./IInsightFacade";
 import * as fs from "fs";
 import JSZip from "jszip";
 import {IElement} from "./interface/IElement";
-import {ISection} from "./interface/ISection";
-
-
-// Returns true if a section is valid
-export function validSection(sectionObj: any): boolean {
-	return sectionObj.subject != null && sectionObj.course != null && sectionObj.avg != null &&
-		sectionObj.professor != null && sectionObj.title != null && sectionObj.pass != null &&
-		sectionObj.fail != null && sectionObj.audit != null && sectionObj.id != null &&
-		sectionObj.year != null;
-}
-
-async function parseSectionObj(sectionObj: any): Promise<ISection> {
-	// create ISection from fileContent
-	const section: ISection = {
-		dept: sectionObj.subject,
-		id: sectionObj.course,
-		avg: sectionObj.avg,
-		instructor: sectionObj.professor,
-		title: sectionObj.title,
-		pass: sectionObj.pass,
-		fail: sectionObj.fail,
-		audit: sectionObj.audit,
-		uuid: sectionObj.id,
-		year: sectionObj.year
-	};
-	return Promise.resolve(section);
-
-}
-
-// Parses a JSON file containing course sections into an array of ISections
-export async function parseFileContent(fileContent: string): Promise<ISection[]> {
-	let object = JSON.parse(fileContent);
-	object = object.result;
-	// return if valid or not
-	const promises: any[] = [];
-	object.forEach((sectionObj: any) => {
-		// add section to sections, if it is valid
-		if (validSection(sectionObj)) {
-			promises.push(parseSectionObj(sectionObj));
-		}
-	});
-	return Promise.all(promises);
-}
-
-export async function writeCourseSections(courseSections: ISection[], filePath: string): Promise<void> {
-	await fs.writeFile(filePath,
-		JSON.stringify(courseSections),
-		() => 0);
-	return Promise.resolve();
-}
-
-export function getKeys(datasets: Map<string, IElement>) {
-	const keys: string[] = [];
-	datasets.forEach((value: IElement, key: string) => {
-		keys.push(key);
-	});
-	return keys;
-}
-
-// parse file and write to path
-export async function parseFile(file: JSZip.JSZipObject, filePath: string): Promise<ISection[]> {
-	return file.async("string").then(async (fileContent) => {
-		// parse file's contents
-		// lowercase string for robust key handling
-		let courseSections: ISection[] = [];
-		return parseFileContent(fileContent.toLocaleLowerCase()).then((awaited) => {
-			courseSections = courseSections.concat(awaited);
-			if (awaited.length > 0) {
-				writeCourseSections(courseSections, filePath);
-			}
-			return Promise.all<ISection[]>(courseSections);
-		});
-	});
-}
-
-export function getDatasets(datasets: Map<string, IElement>): InsightDataset[] {
-	const ret: InsightDataset[] = [];
-	for (const entry of datasets.entries()) {
-		ret.push(entry[1].info);
-	}
-	return ret;
-}
+import {parseFile} from "./utility/IParse";
+import {getDatasets, getKeys} from "./utility/IUtility";
 
 /**
  * This is the main programmatic entry point for the project.
@@ -136,40 +56,41 @@ export default class InsightFacade implements IInsightFacade {
 			// create directory for this dataset's json files
 			fs.mkdirSync(datasetPath + "/courses", {recursive: true});
 
-			// parse zip contents and write to disk
+			// parse zip contents and write to disk and memory
 			let jsZip = new JSZip();
-			return jsZip.loadAsync(content, {base64: true})
-				.then((loadedZip) => {
-					let folderZip = loadedZip.folder("courses");
-					if (folderZip != null) {
-						let promisedSections: any[] = []; // need to somehow fix it so length is not 0 >:(
-						folderZip.forEach(async function (relativePath, file) {
-							promisedSections = promisedSections.concat(parseFile(file,
-								datasetPath + relativePath + ".json"));
-						});
-
-						return Promise.all(promisedSections).then((awaitedSections) => {
-							if (awaitedSections.length === 0) {
-								const error = new InsightError("The dataset did not contain any valid sections");
-								return Promise.reject(error);
-							} else {
-								this.datasets.set(id, {
-									sections: awaitedSections,
-									info: {
-										id: id,
-										kind: InsightDatasetKind.Courses,
-										numRows: awaitedSections.length
-									}
-								});
-								// grab keys and return
-								let keys = getKeys(this.datasets);
-								return Promise.resolve<string[]>(keys);
-							}
-						});
-					} else {
-						return Promise.reject(new InsightError("The dataset did not contain a courses folder"));
-					}
-				});
+			return jsZip.loadAsync(content, {base64: true}).then((loadedZip) => {
+				let folderZip = loadedZip.folder("courses");
+				if (folderZip != null) {
+					// parse the files in the zip under the courses directory
+					let promisedSections: any[] = [];
+					folderZip.forEach(async function (relativePath, file) {
+						promisedSections = promisedSections.concat(
+							parseFile(file, datasetPath + relativePath + ".json")
+						);
+					});
+					// process promised sections into disk and memory
+					return Promise.all(promisedSections).then((awaitedSections) => {
+						if (awaitedSections.length === 0) {
+							const error = new InsightError("The dataset did not contain any valid sections");
+							return Promise.reject(error);
+						} else {
+							this.datasets.set(id, {
+								sections: awaitedSections,
+								info: {
+									id: id,
+									kind: InsightDatasetKind.Courses,
+									numRows: awaitedSections.length,
+								},
+							});
+							// grab keys and return
+							let keys = getKeys(this.datasets);
+							return Promise.resolve<string[]>(keys);
+						}
+					});
+				} else {
+					return Promise.reject(new InsightError("The dataset did not contain a courses folder"));
+				}
+			});
 		} else {
 			return Promise.reject(new InsightError("The dataset contained only whitespace"));
 		}
