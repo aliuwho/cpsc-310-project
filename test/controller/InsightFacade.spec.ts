@@ -121,31 +121,35 @@ describe("InsightFacade", function () {
 		});
 
 		describe("parseFileContent tests", function () {
-			it("should parse a valid JSON file with one course section", async function () {
+			it("should parse a valid JSON file with one course section", function () {
 				let data = fs.readFileSync("test/resources/json/utility/validJson.json").toString();
-				let output = await parseFileContent(data);
-				expect(output).to.have.length(1);
-				expect(output).to.deep.equal([
-					{
-						dept: "aanb",
-						id: "504",
-						avg: 94.44,
-						instructor: "",
-						title: "rsrch methdlgy",
-						pass: 9,
-						fail: 0,
-						audit: 9,
-						uuid: "31379",
-						year: 2015,
-					},
-				]);
+				parseFileContent(data).then((output) => {
+					expect(output).to.have.length(1);
+					expect(output).to.deep.equal([
+						{
+							dept: "aanb",
+							id: "504",
+							avg: 94.44,
+							instructor: "",
+							title: "rsrch methdlgy",
+							pass: 9,
+							fail: 0,
+							audit: 9,
+							uuid: "31379",
+							year: 2015,
+						},
+					]);
+				});
+
 			});
 
-			it("should parse a valid JSON file for multiple course sections", async function () {
+			it("should parse a valid JSON file for multiple course sections", function () {
 				let data = fs.readFileSync("test/resources/json/utility/validJsonThreeSections.json").toString();
-				let output = await parseFileContent(data);
-				expect(output).to.have.length(3);
-				expect(output).to.have.deep.members(courseSections);
+				parseFileContent(data).then((output) => {
+
+					expect(output).to.have.length(3);
+					expect(output).to.have.deep.members(courseSections);
+				});
 			});
 		});
 
@@ -169,8 +173,8 @@ describe("InsightFacade", function () {
 		it("should parse a zip with multiple valid sections", function () {
 			let zip = getContentFromArchives("validJsonThreeSections.zip");
 			let jsZip = new JSZip();
-			jsZip.loadAsync(zip).then((jsZip2) => {
-				let obj = jsZip2.file("validJson.json");
+			jsZip.loadAsync(zip, {base64: true}).then((jsZip2) => {
+				let obj = jsZip2.file("validJsonThreeSections.json");
 				expect(obj).to.be.not.null;
 				if (obj) {
 					parseFile(obj, "./data/validJson/courses/aanb002.json").then((output) => {
