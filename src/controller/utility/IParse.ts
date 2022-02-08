@@ -53,18 +53,20 @@ export async function parseFileContent(fileContent: string): Promise<ISection[]>
 	return Promise.all(promises);
 }
 
-// Parses a JSZip object into course sections
+// Parses a JSZip object representing a file into course sections
 export async function parseFile(file: JSZip.JSZipObject, filePath: string): Promise<ISection[]> {
 	return file.async("string").then(async (fileContent) => {
 		// parse file's contents
 		// lowercase string for robust key handling
 		let courseSections: ISection[] = [];
 		return parseFileContent(fileContent.toLocaleLowerCase()).then((awaited) => {
-			courseSections = courseSections.concat(awaited);
 			if (awaited.length > 0) {
+				courseSections = courseSections.concat(awaited);
 				writeCourseSections(courseSections, filePath);
 			}
 			return Promise.all<ISection[]>(courseSections);
+		}).catch(() => {
+			return Promise.reject("File content could not be parsed");
 		});
 	});
 }
