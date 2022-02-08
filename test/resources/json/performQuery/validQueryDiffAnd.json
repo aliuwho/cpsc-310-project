@@ -1,0 +1,30 @@
+{
+  "title": "valid query with x and y",
+  "input": {
+    "WHERE": {
+      "AND": [
+        {
+          "EQ": {
+            "courses_avg": 70
+          }
+        },
+        {
+          "EQ": {
+            "courses_avg": 69
+          }
+        }
+      ]
+    },
+    "OPTIONS": {
+      "COLUMNS": [
+        "courses_dept",
+        "courses_id",
+        "courses_avg"
+      ],
+      "ORDER": "courses_avg"
+    }
+  },
+  "errorExpected": false,
+  "verbose": false,
+  "expected": []
+}

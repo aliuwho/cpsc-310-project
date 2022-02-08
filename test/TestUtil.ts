@@ -6,7 +6,7 @@ function getContentFromArchives(name: string): string {
 	return fs.readFileSync("test/resources/archives/" + name).toString("base64");
 }
 
-function clearDisk(): void{
+function clearDisk(): void {
 	fs.removeSync(persistDir);
 }
 

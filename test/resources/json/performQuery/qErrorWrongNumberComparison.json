@@ -1,0 +1,19 @@
+{
+  "title": "Query Key Number Comparison has Bool Input Error",
+  "input": {
+    "WHERE": {
+      "LT": {
+        "courses_pass": true
+      }
+    },
+    "OPTIONS": {
+      "COLUMNS": [
+        "courses_title",
+        "courses_pass"
+      ],
+      "ORDER": "courses_pass"
+    }
+  },
+  "errorExpected": true,
+  "expected": "InsightError"
+}

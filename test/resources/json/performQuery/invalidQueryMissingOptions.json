@@ -1,0 +1,13 @@
+{
+  "title": "query missing Options field throws InsightError",
+  "input": {
+    "WHERE": {
+      "LT": {
+        "courses_avg": 30
+      }
+    }
+  },
+  "errorExpected": true,
+  "verbose": false,
+  "expected": "InsightError"
+}

@@ -1,0 +1,32 @@
+{
+  "title": "valid query with x and not x",
+  "input": {
+    "WHERE": {
+      "AND": [
+        {
+          "EQ": {
+            "courses_avg": 69
+          }
+        },
+        {
+          "NOT": {
+            "EQ": {
+              "courses_avg": 69
+            }
+          }
+        }
+      ]
+    },
+    "OPTIONS": {
+      "COLUMNS": [
+        "courses_year",
+        "courses_instructor",
+        "courses_audit"
+      ],
+      "ORDER": "courses_year"
+    }
+  },
+  "errorExpected": false,
+  "verbose": false,
+  "expected": []
+}

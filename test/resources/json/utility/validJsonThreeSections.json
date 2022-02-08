@@ -1,0 +1,41 @@
+{
+	"result": [
+		{
+			"subject": "cpsc",
+			"course": "101",
+			"avg": 8.9,
+			"professor": "mike gelbart",
+			"title": "intro to computer science",
+			"pass": 23,
+			"fail": 12,
+			"audit": 2,
+			"id": "1010",
+			"year": 2020
+		},
+		{
+			"subject": "econ",
+			"course": "101",
+			"avg": 100,
+			"professor": "mr. gateman",
+			"title": "economic systems",
+			"pass": 2,
+			"fail": 1,
+			"audit": 20,
+			"id": "110",
+			"year": 2022
+		},
+		{
+			"subject": "stat",
+			"course": "421",
+			"avg": 69.2,
+			"professor": "wolf skert",
+			"title": "statistics",
+			"pass": 7,
+			"fail": 8,
+			"audit": 6,
+			"id": "8023",
+			"year": 1973
+		}
+	]
+}
+
