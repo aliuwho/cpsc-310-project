@@ -43,11 +43,7 @@ describe("InsightFacade", function () {
 
 		beforeEach(function () {
 			clearDisk();
-			try {
-				mkdirSync("./data/test", {recursive: true});
-			} catch (error) {
-				// do nothing if dir already exists
-			}
+			mkdirSync("./data/test", {recursive: true});
 
 			testDatasets = new Map();
 			section1 = {
