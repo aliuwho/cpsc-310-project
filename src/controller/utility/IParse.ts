@@ -56,7 +56,6 @@ export async function parseFileContent(fileContent: string): Promise<ISection[]>
 		// ignore invalid JSONs
 	}
 	return Promise.all(promises);
-
 }
 
 // Parses a JSZip object representing a file into course sections and writes sections to filePath in JSON format
@@ -65,13 +64,12 @@ export async function parseFile(file: JSZip.JSZipObject, filePath: string): Prom
 		// parse file's contents
 		// lowercase string for robust key handling
 		let courseSections: ISection[] = [];
-		return parseFileContent(fileContent)
-			.then((awaited) => {
-				if (awaited.length > 0) {
-					courseSections = courseSections.concat(awaited);
-					writeCourseSections(courseSections, filePath);
-				}
-				return Promise.all<ISection[]>(courseSections);
-			});
+		return parseFileContent(fileContent).then((awaited) => {
+			if (awaited.length > 0) {
+				courseSections = courseSections.concat(awaited);
+				writeCourseSections(courseSections, filePath);
+			}
+			return Promise.all<ISection[]>(courseSections);
+		});
 	});
 }

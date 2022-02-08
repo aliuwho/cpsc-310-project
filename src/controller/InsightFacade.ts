@@ -66,7 +66,6 @@ export default class InsightFacade implements IInsightFacade {
 					folderZip.forEach(async function (relativePath, file) {
 						let sections = parseFile(file, datasetPath + "/" + relativePath + ".json");
 						promisedSections = promisedSections.concat(sections);
-
 					});
 					// process promised sections into disk and memory
 					return Promise.all(promisedSections).then((awaitedSections) => {

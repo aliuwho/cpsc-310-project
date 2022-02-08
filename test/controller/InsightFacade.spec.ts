@@ -125,18 +125,20 @@ describe("InsightFacade", function () {
 				let data = fs.readFileSync("test/resources/json/utility/validJson.json").toString();
 				let output = await parseFileContent(data);
 				expect(output).to.have.length(1);
-				expect(output).to.deep.equal([{
-					dept: "aanb",
-					id: "504",
-					avg: 94.44,
-					instructor: "",
-					title: "rsrch methdlgy",
-					pass: 9,
-					fail: 0,
-					audit: 9,
-					uuid: "31379",
-					year: 2015,
-				}]);
+				expect(output).to.deep.equal([
+					{
+						dept: "aanb",
+						id: "504",
+						avg: 94.44,
+						instructor: "",
+						title: "rsrch methdlgy",
+						pass: 9,
+						fail: 0,
+						audit: 9,
+						uuid: "31379",
+						year: 2015,
+					},
+				]);
 			});
 
 			it("should parse a valid JSON file for multiple course sections", async function () {
@@ -327,7 +329,6 @@ describe("InsightFacade", function () {
 					})
 			);
 		});
-
 	});
 
 	describe("Remove Datasets", function () {
