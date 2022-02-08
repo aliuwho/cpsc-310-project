@@ -7,7 +7,7 @@ import {
 	ResultTooLargeError,
 } from "../../src/controller/IInsightFacade";
 import InsightFacade from "../../src/controller/InsightFacade";
-import {expect} from "chai";
+import {expect, use} from "chai";
 import {clearDisk, getContentFromArchives} from "../TestUtil";
 import {folderTest} from "@ubccpsc310/folder-test";
 import {ISection} from "../../src/controller/interface/ISection";
@@ -17,6 +17,9 @@ import * as fs from "fs-extra";
 import {getKeys, writeCourseSections} from "../../src/controller/utility/IUtility";
 import {parseFile, parseFileContent} from "../../src/controller/utility/IParse";
 import JSZip from "jszip";
+import chaiAsPromised from "chai-as-promised";
+
+use(chaiAsPromised);
 
 // For folderTest
 type Input = unknown;
