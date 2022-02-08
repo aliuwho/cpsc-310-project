@@ -26,3 +26,8 @@ export function getDatasets(datasets: Map<string, IElement>): InsightDataset[] {
 	}
 	return ret;
 }
+
+// Returns true if an array is not empty
+export function notEmpty(arr: any[]): boolean {
+	return arr.length > 0;
+}

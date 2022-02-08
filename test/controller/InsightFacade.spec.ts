@@ -15,7 +15,8 @@ import {existsSync, mkdirSync} from "fs";
 import {IElement} from "../../src/controller/interface/IElement";
 import * as fs from "fs-extra";
 import {getKeys, writeCourseSections} from "../../src/controller/utility/IUtility";
-import {parseFileContent} from "../../src/controller/utility/IParse";
+import {parseFile, parseFileContent} from "../../src/controller/utility/IParse";
+import JSZip from "jszip";
 
 // For folderTest
 type Input = unknown;
@@ -117,12 +118,75 @@ describe("InsightFacade", function () {
 		});
 
 		describe("parseFileContent tests", function () {
-			it("should parse a valid JSON file", function () {
-				let data = fs.readFileSync("test/resources/json/addDatasetHelper/parseValidFile.json").toString();
-				parseFileContent(data).then((output) => {
-					expect(output).to.eventually.have.length(3);
-					expect(output).to.eventually.have.deep.members(courseSections);
+			it("should parse a valid JSON file with one course section", async function () {
+				let data = fs.readFileSync("test/resources/json/utility/validJson.json").toString();
+				let output = await parseFileContent(data);
+				expect(output).to.have.length(1);
+				expect(output).to.deep.equal([{
+					dept: "aanb",
+					id: "504",
+					avg: 94.44,
+					instructor: "",
+					title: "rsrch methdlgy",
+					pass: 9,
+					fail: 0,
+					audit: 9,
+					uuid: "31379",
+					year: 2015,
+				}]);
+			});
+
+			it("should parse a valid JSON file for multiple course sections", async function () {
+				let data = fs.readFileSync("test/resources/json/utility/validJsonThreeSections.json").toString();
+				let output = await parseFileContent(data);
+				expect(output).to.have.length(3);
+				expect(output).to.have.deep.members(courseSections);
+			});
+		});
+
+		describe("parseFile tests", function () {
+			it("should parse a zip with 1 file containing only 1 valid section", function () {
+				let zip = getContentFromArchives("validJson.zip");
+				let jsZip = new JSZip();
+				jsZip.loadAsync(zip).then((jsZip2) => {
+					let obj = jsZip2.file("validJson.json");
+					expect(obj).to.be.not.null;
+					if (obj) {
+						parseFile(obj, "./data/validJson/courses/aanb002.json").then((output) => {
+							expect(output).to.have.length(1);
+							expect(output).to.have.deep.members(courseSections);
+						});
+					}
 				});
+			});
+		});
+
+		it("should parse a zip with multiple valid sections", function () {
+			let zip = getContentFromArchives("validJsonThreeSections.zip");
+			let jsZip = new JSZip();
+			jsZip.loadAsync(zip).then((jsZip2) => {
+				let obj = jsZip2.file("validJson.json");
+				expect(obj).to.be.not.null;
+				if (obj) {
+					parseFile(obj, "./data/validJson/courses/aanb002.json").then((output) => {
+						expect(output).to.have.length(1);
+						expect(output).to.have.deep.members(courseSections);
+					});
+				}
+			});
+		});
+
+		it("should not parse from an invalid section in a zip", function () {
+			let zip = getContentFromArchives("invalidJson.zip");
+			let jsZip = new JSZip();
+			jsZip.loadAsync(zip).then((jsZip2) => {
+				let obj = jsZip2.file("invalidJson.json");
+				expect(obj).to.be.not.null;
+				if (obj) {
+					parseFile(obj, "./data/validJson/courses/aanb002.json").then((output) => {
+						expect(output).to.have.length(0);
+					});
+				}
 			});
 		});
 	});
@@ -157,7 +221,7 @@ describe("InsightFacade", function () {
 				});
 		});
 
-		it("should add valid dataset", function () {
+		it("should ignore invalid sections when adding a dataset", function () {
 			const validFile = getContentFromArchives("one-valid-course.zip");
 			return facade
 				.addDataset("valid-course", validFile, InsightDatasetKind.Courses)
@@ -243,15 +307,9 @@ describe("InsightFacade", function () {
 
 		it("rejects invalid file type", function () {
 			const invalidFile = getContentFromArchives("invalidFile.json");
-			return (
-				facade
-					.addDataset("courses_reject", invalidFile, InsightDatasetKind.Courses)
-					.then()
-					// Unsure if then() can be empty / need to throw something
-					.catch((err) => {
-						expect(err).to.be.instanceOf(InsightError);
-					})
-			);
+			return facade.addDataset("courses_reject", invalidFile, InsightDatasetKind.Courses).catch((err) => {
+				expect(err).to.be.instanceOf(InsightError);
+			});
 		});
 
 		it("rejects empty file", function () {
@@ -266,6 +324,7 @@ describe("InsightFacade", function () {
 					})
 			);
 		});
+
 	});
 
 	describe("Remove Datasets", function () {

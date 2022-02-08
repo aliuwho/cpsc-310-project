@@ -9,8 +9,8 @@ import {
 import * as fs from "fs";
 import JSZip from "jszip";
 import {IElement} from "./interface/IElement";
+import {getDatasets, getKeys, notEmpty} from "./utility/IUtility";
 import {parseFile} from "./utility/IParse";
-import {getDatasets, getKeys} from "./utility/IUtility";
 
 /**
  * This is the main programmatic entry point for the project.
@@ -64,14 +64,13 @@ export default class InsightFacade implements IInsightFacade {
 					// parse the files in the zip under the courses directory
 					let promisedSections: any[] = [];
 					folderZip.forEach(async function (relativePath, file) {
-						let sections = parseFile(file, datasetPath + relativePath + ".json")
-							.catch(() => {
-								return [];
-							});
+						let sections = parseFile(file, datasetPath + "/" + relativePath + ".json");
 						promisedSections = promisedSections.concat(sections);
+
 					});
 					// process promised sections into disk and memory
 					return Promise.all(promisedSections).then((awaitedSections) => {
+						awaitedSections = awaitedSections.filter(notEmpty);
 						if (awaitedSections.length === 0) {
 							const error = new InsightError("The dataset did not contain any valid sections");
 							return Promise.reject(error);
