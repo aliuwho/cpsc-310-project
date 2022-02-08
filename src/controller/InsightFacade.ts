@@ -9,7 +9,7 @@ import {
 import * as fs from "fs";
 import JSZip from "jszip";
 import {IElement} from "./interface/IElement";
-import {getDatasets, getKeys, notEmpty} from "./utility/IUtility";
+import {getDatasets, getKeys} from "./utility/IUtility";
 import {parseFile} from "./utility/IParse";
 
 /**
@@ -70,7 +70,7 @@ export default class InsightFacade implements IInsightFacade {
 					});
 					// process promised sections into disk and memory
 					return Promise.all(promisedSections).then((awaitedSections) => {
-						awaitedSections = awaitedSections.filter(notEmpty);
+						awaitedSections = awaitedSections.reduce((accumulator, value) => accumulator.concat(value), []);
 						if (awaitedSections.length === 0) {
 							const error = new InsightError("The dataset did not contain any valid sections");
 							return Promise.reject(error);
