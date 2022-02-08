@@ -84,6 +84,14 @@ export async function parseFile(file: JSZip.JSZipObject, filePath: string): Prom
 	});
 }
 
+export function getDatasets(datasets: Map<string, IElement>): InsightDataset[] {
+	const ret: InsightDataset[] = [];
+	for (const entry of datasets.entries()) {
+		ret.push(entry[1].info);
+	}
+	return ret;
+}
+
 /**
  * This is the main programmatic entry point for the project.
  * Method documentation is in IInsightFacade
@@ -186,6 +194,6 @@ export default class InsightFacade implements IInsightFacade {
 	}
 
 	public listDatasets(): Promise<InsightDataset[]> {
-		return Promise.reject("Not implemented.");
+		return Promise.resolve(getDatasets(this.datasets));
 	}
 }
