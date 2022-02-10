@@ -1,0 +1,20 @@
+{
+  "title": "is query with *** throws InsightError",
+  "input": {
+    "WHERE": {
+      "IS": {
+		  "courses_title": "***"
+      }
+    },
+    "OPTIONS": {
+      "COLUMNS": [
+        "courses_dept",
+        "courses_avg"
+      ],
+      "ORDER": "courses_avg"
+    }
+  },
+  "errorExpected": true,
+  "verbose": false,
+  "expected": "InsightError"
+}
