@@ -4,13 +4,15 @@ import {
 	InsightDatasetKind,
 	InsightError,
 	InsightResult,
-	NotFoundError,
+	NotFoundError, ResultTooLargeError,
 } from "./IInsightFacade";
 import * as fs from "fs";
 import JSZip from "jszip";
 import {IElement} from "./interface/IElement";
 import {getDatasets, getKeys} from "./utility/IUtility";
 import {parseFile} from "./utility/IParse";
+import {IPerformQuery} from "./utility/IPerformQuery";
+import {ISection} from "./interface/ISection";
 
 /**
  * This is the main programmatic entry point for the project.
@@ -112,7 +114,77 @@ export default class InsightFacade implements IInsightFacade {
 	}
 
 	public performQuery(query: unknown): Promise<InsightResult[]> {
-		return Promise.reject("Not implemented.");
+		let performQueryTemp = new IPerformQuery(this.datasets);
+		const results: InsightResult[] = [];
+		return new Promise((resolve, reject) => {
+			if (!(query instanceof Object)) {
+				// Reject if invalid type
+				throw new InsightError("Invalid query string: Invalid JSON");
+			}
+			const tempQuery: any = query; // to have access to the keys
+
+			if (!(tempQuery["WHERE"])) {
+				// Reject if no WHERE block
+				throw new InsightError("Missing WHERE");
+			}
+
+			if (!(tempQuery["OPTIONS"])) {
+				// Reject if no OPTIONS block
+				throw new InsightError("Missing OPTIONS");
+			}
+
+			const whereBlock = tempQuery["WHERE"];
+			const optionBlock = tempQuery["OPTIONS"];
+			let filteredSections: ISection[] = [];
+			// WHERE block manipulation
+			if(Object.keys(whereBlock).length > 0){
+				performQueryTemp.checkObjectLength(whereBlock, "WHERE");
+				filteredSections = performQueryTemp.mainWhereFilter(whereBlock, []);
+			}
+			// OPTIONS block manipulation
+			if (!(optionBlock["COLUMNS"])) {
+				// Reject if no COLUMNS block
+				throw new InsightError("OPTIONS missing COLUMNS");
+			}
+			const columnArray = optionBlock["COLUMNS"];
+			const orderField = optionBlock["ORDER"];
+			if (columnArray.length <= 0) {
+				// Reject if no COLUMN array is empty
+				throw new InsightError("COLUMNS must be a non-empty array");
+			}
+			// Swap column and section
+			for(let section of filteredSections){
+				// Go through every filteredSection to select specified values
+				let resultElementToBeAdded: any = {};
+				for(let columnName of columnArray) {
+					const splitKey = columnName.split("_");
+					const specifiedDatasetName = splitKey[0];
+					performQueryTemp.checkIfMultipleDatasets(specifiedDatasetName);
+					const specifiedField = splitKey[1] as keyof ISection;
+					// Add field into resultElementToBeAdded object
+					resultElementToBeAdded[columnName] = section[specifiedField];
+				}
+				// Add resultElementToBeAdded into results array
+				results.push(resultElementToBeAdded);
+			}
+			if (results.length > 5000) {
+				return reject(new ResultTooLargeError("The result is too big (>5000 results)"));
+			}
+			this.orderFunction(orderField, columnArray, performQueryTemp);
+			resolve(results);
+		});
+	}
+
+	private orderFunction(orderField: any, columnArray: any, performQueryTemp: IPerformQuery) {
+		// Sort by order
+		if (orderField) {
+			if (!(columnArray.includes(orderField))) {
+				// Reject if Order Field does not exist in Column Array
+				throw new InsightError("ORDER key must be in COLUMNS");
+			}
+			performQueryTemp.setOriginalDatasetAndCheckDataset(orderField);
+			// Sort
+		}
 	}
 
 	public listDatasets(): Promise<InsightDataset[]> {

@@ -507,14 +507,14 @@ describe("InsightFacade", function () {
 	describe("Perform Query", function () {
 		let facade: IInsightFacade;
 
-		before(async function () {
-			clearDisk();
-			facade = new InsightFacade();
-			courses = getContentFromArchives("courses.zip");
-			courses2 = getContentFromArchives("ten-courses.zip");
-			await facade.addDataset("courses", courses, InsightDatasetKind.Courses);
-			await facade.addDataset("courses-2", courses2, InsightDatasetKind.Courses);
-		});
+		// before(async function () {
+		// 	clearDisk();
+		// 	facade = new InsightFacade();
+		// 	courses = getContentFromArchives("courses.zip");
+		// 	courses2 = getContentFromArchives("ten-courses.zip");
+		// 	await facade.addDataset("courses", courses, InsightDatasetKind.Courses);
+		// 	await facade.addDataset("courses-2", courses2, InsightDatasetKind.Courses);
+		// });
 
 		it("should run dynamic folder tests for performQuery", function () {
 			// Assert actual result is correct, regardless of order
@@ -549,5 +549,49 @@ describe("InsightFacade", function () {
 				}
 			);
 		});
+	});
+
+	describe("PerformQuery", () => {
+		let insightFacade: IInsightFacade;
+		before(function () {
+			console.info(`Before: ${this.test?.parent?.title}`);
+			clearDisk();
+
+			insightFacade = new InsightFacade();
+
+			// Load the datasets specified in datasetsToQuery and add them to InsightFacade.
+			// Will *fail* if there is a problem reading ANY dataset.
+			const loadDatasetPromises = [
+				insightFacade.addDataset("courses", getContentFromArchives("courses.zip"), InsightDatasetKind.Courses),
+				insightFacade.addDataset("courses-2",
+					getContentFromArchives("ten-courses.zip"), InsightDatasetKind.Courses)
+			];
+
+			return Promise.all(loadDatasetPromises);
+		});
+
+		after(function () {
+			console.info(`After: ${this.test?.parent?.title}`);
+			clearDisk();
+		});
+
+		type PQErrorKind = "ResultTooLargeError" | "InsightError";
+
+		folderTest<unknown, Promise<InsightResult[]>, PQErrorKind>(
+			"Dynamic InsightFacade PerformQuery tests",
+			(input) => insightFacade.performQuery(input),
+			"./test/resources/json/performQuery",
+			{
+				errorValidator: (error): error is PQErrorKind =>
+					error === "ResultTooLargeError" || error === "InsightError",
+				assertOnError(actual, expected) {
+					if (expected === "ResultTooLargeError") {
+						expect(actual).to.be.instanceof(ResultTooLargeError);
+					} else {
+						expect(actual).to.be.instanceof(InsightError);
+					}
+				},
+			}
+		);
 	});
 });
