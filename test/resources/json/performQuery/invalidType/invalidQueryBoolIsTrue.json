@@ -1,14 +1,15 @@
 {
-  "title": "query with invalid type for eq",
+  "title": "invalid type (true) used in IS comparison",
   "input": {
     "WHERE": {
-      "EQ": {
-        "courses_avg": "23"
+      "IS": {
+        "courses_dept": true
       }
     },
     "OPTIONS": {
       "COLUMNS": [
         "courses_dept",
+        "courses_id",
         "courses_avg"
       ],
       "ORDER": "courses_avg"

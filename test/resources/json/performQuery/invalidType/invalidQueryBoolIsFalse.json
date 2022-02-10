@@ -1,14 +1,15 @@
 {
-  "title": "query with invalid type for lt",
+  "title": "invalid type (false) used in IS comparison",
   "input": {
     "WHERE": {
-      "LT": {
-        "courses_avg": "23"
+      "IS": {
+        "courses_dept": false
       }
     },
     "OPTIONS": {
       "COLUMNS": [
         "courses_dept",
+        "courses_id",
         "courses_avg"
       ],
       "ORDER": "courses_avg"

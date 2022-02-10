@@ -1,14 +1,15 @@
 {
-  "title": "query with invalid type for gt",
+  "title": "invalid type (num) used in IS comparison",
   "input": {
     "WHERE": {
-      "GT": {
-        "courses_avg": "23"
+      "IS": {
+        "courses_dept": 0
       }
     },
     "OPTIONS": {
       "COLUMNS": [
         "courses_dept",
+        "courses_id",
         "courses_avg"
       ],
       "ORDER": "courses_avg"
