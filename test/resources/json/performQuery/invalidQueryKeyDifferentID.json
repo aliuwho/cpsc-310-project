@@ -1,5 +1,5 @@
 {
-  "title": "Simple Query",
+  "title": "referring to multiple dataset ids should throw InsightError",
   "input": {
     "WHERE":{
       "GT":{
