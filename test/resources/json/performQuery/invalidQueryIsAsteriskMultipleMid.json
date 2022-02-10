@@ -1,9 +1,9 @@
 {
-  "title": "is query with _**_ throws InsightError",
+  "title": "is query with ** throws ResultTooLargeError",
   "input": {
     "WHERE": {
       "IS": {
-		  "courses_title": "meteor ** storms"
+		  "courses_title": "**"
       }
     },
     "OPTIONS": {
@@ -16,5 +16,5 @@
   },
   "errorExpected": true,
   "verbose": false,
-  "expected": "InsightError"
+  "expected": "ResultTooLargeError"
 }
