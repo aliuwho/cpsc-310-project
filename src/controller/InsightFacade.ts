@@ -115,7 +115,7 @@ export default class InsightFacade implements IInsightFacade {
 
 	public performQuery(query: unknown): Promise<InsightResult[]> {
 		let performQueryTemp = new IPerformQuery(this.datasets);
-		const results: InsightResult[] = [];
+		let results: InsightResult[] = [];
 		return new Promise((resolve, reject) => {
 			if (!(query instanceof Object)) {
 				// Reject if invalid type
@@ -170,21 +170,9 @@ export default class InsightFacade implements IInsightFacade {
 			if (results.length > 5000) {
 				return reject(new ResultTooLargeError("The result is too big (>5000 results)"));
 			}
-			this.orderFunction(orderField, columnArray, performQueryTemp);
+			results = performQueryTemp.orderFunction(orderField, columnArray, results);
 			resolve(results);
 		});
-	}
-
-	private orderFunction(orderField: any, columnArray: any, performQueryTemp: IPerformQuery) {
-		// Sort by order
-		if (orderField) {
-			if (!(columnArray.includes(orderField))) {
-				// Reject if Order Field does not exist in Column Array
-				throw new InsightError("ORDER key must be in COLUMNS");
-			}
-			performQueryTemp.setOriginalDatasetAndCheckDataset(orderField);
-			// Sort
-		}
 	}
 
 	public listDatasets(): Promise<InsightDataset[]> {

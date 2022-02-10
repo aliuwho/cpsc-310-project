@@ -1,5 +1,5 @@
 import {ISection} from "../interface/ISection";
-import {IInsightFacade, InsightError} from "../IInsightFacade";
+import {InsightError, InsightResult} from "../IInsightFacade";
 import {IElement} from "../interface/IElement";
 
 export class IPerformQuery {
@@ -221,5 +221,34 @@ export class IPerformQuery {
 			// Reject if multiple datasets are referred
 			throw new InsightError("Multiple datasets cannot be referred");
 		}
+	}
+
+	public orderFunction(orderField: string, columnArray: any, results: InsightResult[]): InsightResult[] {
+		// Sort by order
+		let finalResults: InsightResult[] = [];
+		if (orderField) {
+			if (!(columnArray.includes(orderField))) {
+				// Reject if Order Field does not exist in Column Array
+				throw new InsightError("ORDER key must be in COLUMNS");
+			}
+			this.setOriginalDatasetAndCheckDataset(orderField);
+			// Sort
+			finalResults =  this.insertionSort(orderField, results);
+		}
+		return finalResults;
+	}
+
+	public insertionSort(orderField: string,  results: InsightResult[]): InsightResult[] {
+		for(let i = 1; i < results.length; i++){
+			let currentResultElement = results[i];
+			let currentVariable = currentResultElement[orderField];
+			let comparisonIndex = i - 1;
+			while(comparisonIndex >= 0 && results[comparisonIndex][orderField] > currentVariable){
+				results[comparisonIndex + 1] = results[comparisonIndex];
+				comparisonIndex = comparisonIndex - 1;
+			}
+			results[comparisonIndex + 1] = currentResultElement;
+		}
+		return results;
 	}
 }
