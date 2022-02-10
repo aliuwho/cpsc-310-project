@@ -1,0 +1,97 @@
+{
+	"title": "valid query with x and y",
+	"input": {
+		"WHERE": {
+			"OR": [
+				{
+					"IS": {
+						"courses_title": "meteor of storms"
+					}
+				}
+			]
+		},
+		"OPTIONS": {
+			"COLUMNS": [
+				"courses_dept",
+				"courses_avg"
+			],
+			"ORDER": "courses_avg"
+		}
+	},
+	"errorExpected": false,
+	"verbose": false,
+	"expected": [
+		{
+			"courses_dept": "atsc",
+			"courses_avg": 80.55
+		},
+		{
+			"courses_dept": "atsc",
+			"courses_avg": 80.55
+		},
+		{
+			"courses_dept": "atsc",
+			"courses_avg": 81.36
+		},
+		{
+			"courses_dept": "atsc",
+			"courses_avg": 81.36
+		},
+		{
+			"courses_dept": "atsc",
+			"courses_avg": 82.3
+		},
+		{
+			"courses_dept": "atsc",
+			"courses_avg": 82.3
+		},
+		{
+			"courses_dept": "atsc",
+			"courses_avg": 82.46
+		},
+		{
+			"courses_dept": "atsc",
+			"courses_avg": 82.46
+		},
+		{
+			"courses_dept": "atsc",
+			"courses_avg": 82.53
+		},
+		{
+			"courses_dept": "atsc",
+			"courses_avg": 82.53
+		},
+		{
+			"courses_dept": "atsc",
+			"courses_avg": 83.54
+		},
+		{
+			"courses_dept": "atsc",
+			"courses_avg": 83.54
+		},
+		{
+			"courses_dept": "atsc",
+			"courses_avg": 84.01
+		},
+		{
+			"courses_dept": "atsc",
+			"courses_avg": 84.01
+		},
+		{
+			"courses_dept": "atsc",
+			"courses_avg": 85.41
+		},
+		{
+			"courses_dept": "atsc",
+			"courses_avg": 85.41
+		},
+		{
+			"courses_dept": "atsc",
+			"courses_avg": 85.75
+		},
+		{
+			"courses_dept": "atsc",
+			"courses_avg": 85.75
+		}
+	]
+}
