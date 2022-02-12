@@ -1,0 +1,38 @@
+{
+  "title": "Query With Nested And Conditions, returns empty array",
+  "input": {
+    "WHERE": {
+      "AND": [
+        {
+          "NOT": {
+            "LT": {
+              "courses_audit": 3
+            }
+          }
+        },
+        {
+          "IS": {
+            "courses_dept": "cpsc"
+          }
+        },
+        {
+          "NOT": {
+            "IS": {
+              "courses_title": "m.sc major essay"
+            }
+          }
+        }
+      ]
+    },
+    "OPTIONS": {
+      "COLUMNS": [
+        "courses_title",
+        "courses_audit",
+        "courses_pass"
+      ],
+      "ORDER": "courses_pass"
+    }
+  },
+  "errorExpected": false,
+  "expected": []
+}

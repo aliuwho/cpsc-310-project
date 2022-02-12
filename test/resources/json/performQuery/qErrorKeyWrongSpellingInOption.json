@@ -3,7 +3,7 @@
   "input": {
     "WHERE": {
       "EQ": {
-        "courses_avg": 123
+        "courses_avg": 50
       }
     },
     "OPTIONS": {

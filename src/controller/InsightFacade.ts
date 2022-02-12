@@ -4,13 +4,15 @@ import {
 	InsightDatasetKind,
 	InsightError,
 	InsightResult,
-	NotFoundError,
+	NotFoundError, ResultTooLargeError,
 } from "./IInsightFacade";
 import * as fs from "fs";
 import JSZip from "jszip";
 import {IElement} from "./interface/IElement";
 import {getDatasets, getKeys} from "./utility/IUtility";
 import {parseFile} from "./utility/IParse";
+import {IPerformQuery} from "./utility/IPerformQuery";
+import {ISection} from "./interface/ISection";
 
 /**
  * This is the main programmatic entry point for the project.
@@ -111,7 +113,75 @@ export default class InsightFacade implements IInsightFacade {
 	}
 
 	public performQuery(query: unknown): Promise<InsightResult[]> {
-		return Promise.reject("Not implemented.");
+		let performQueryTemp = new IPerformQuery(this.datasets);
+		let results: InsightResult[] = [];
+		return new Promise((resolve, reject) => {
+			if (!(query instanceof Object)) {
+				// Reject if invalid type
+				throw new InsightError("Invalid query string: Invalid JSON");
+			}
+			const tempQuery: any = query; // to have access to the keys
+
+			if (!(tempQuery["WHERE"])) {
+				// Reject if no WHERE block
+				throw new InsightError("Missing WHERE");
+			}
+
+			if (!(tempQuery["OPTIONS"])) {
+				// Reject if no OPTIONS block
+				throw new InsightError("Missing OPTIONS");
+			}
+
+			const whereBlock = tempQuery["WHERE"];
+			const optionBlock = tempQuery["OPTIONS"];
+			let filteredSections: ISection[] = [];
+			// WHERE block manipulation
+			if(Object.keys(whereBlock).length > 0){
+				performQueryTemp.checkObjectLength(whereBlock, "WHERE");
+				filteredSections = performQueryTemp.mainWhereFilter(whereBlock, []);
+			}
+			// OPTIONS block manipulation
+			if (!(optionBlock["COLUMNS"])) {
+				// Reject if no COLUMNS block
+				throw new InsightError("OPTIONS missing COLUMNS");
+			}
+			const columnArray = optionBlock["COLUMNS"];
+			const orderField = optionBlock["ORDER"];
+			if (columnArray.length <= 0 || !(Array.isArray(columnArray))) {
+				// Reject if no COLUMN array is empty
+				throw new InsightError("COLUMNS must be a non-empty array");
+			}
+			// Check if WHERE block has filters, if not return the whole section array in the specified ZIP
+			filteredSections = performQueryTemp.checkIfWhereBlockHasFiltered(filteredSections, columnArray[0]);
+
+			for(let section of filteredSections){
+				// Go through every filteredSection to select specified values
+				let resultElementToBeAdded: any = {};
+				for(let columnName of columnArray) {
+					resultElementToBeAdded = this.createFieldInResultElementToBeAdded(columnName,
+						performQueryTemp, resultElementToBeAdded, section);
+				}
+				// Add resultElementToBeAdded into results array
+				results.push(resultElementToBeAdded);
+			}
+			if (results.length > 5000) {
+				return reject(new ResultTooLargeError("The result is too big (>5000 results)"));
+			}
+			results = performQueryTemp.orderFunction(orderField, columnArray, results);
+			resolve(results);
+		});
+	}
+
+	private createFieldInResultElementToBeAdded(columnName: any, performQueryTemp: IPerformQuery,
+		resultElementToBeAdded: any, section: ISection): any {
+		const splitKey = columnName.split("_");
+		const specifiedDatasetName = splitKey[0];
+		performQueryTemp.checkIfMultipleDatasets(specifiedDatasetName);
+		const specifiedField = splitKey[1];
+		performQueryTemp.checkIfKeyExistsInSection(specifiedField);
+		// Add field into resultElementToBeAdded object
+		resultElementToBeAdded[columnName] = section[specifiedField as keyof ISection];
+		return resultElementToBeAdded;
 	}
 
 	public listDatasets(): Promise<InsightDataset[]> {
