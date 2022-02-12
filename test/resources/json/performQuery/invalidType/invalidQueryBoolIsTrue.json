@@ -1,9 +1,9 @@
 {
-  "title": "invalid type used in IS comparison",
+  "title": "invalid type (true) used in IS comparison",
   "input": {
     "WHERE": {
       "IS": {
-        "courses_dept": 0
+        "courses_dept": true
       }
     },
     "OPTIONS": {

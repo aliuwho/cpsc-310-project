@@ -1,9 +1,9 @@
 {
-  "title": "query with invalid type for gt",
+  "title": "is query with _*_ throws InsightError",
   "input": {
     "WHERE": {
-      "GT": {
-        "courses_avg": "23"
+      "IS": {
+		  "courses_title": "meteor of* storms"
       }
     },
     "OPTIONS": {

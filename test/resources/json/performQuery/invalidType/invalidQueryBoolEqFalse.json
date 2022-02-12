@@ -1,0 +1,20 @@
+{
+  "title": "query with invalid type (false) for eq",
+  "input": {
+    "WHERE": {
+      "EQ": {
+        "courses_avg": false
+      }
+    },
+    "OPTIONS": {
+      "COLUMNS": [
+        "courses_dept",
+        "courses_avg"
+      ],
+      "ORDER": "courses_avg"
+    }
+  },
+  "errorExpected": true,
+  "verbose": false,
+  "expected": "InsightError"
+}

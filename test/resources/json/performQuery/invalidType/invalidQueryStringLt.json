@@ -1,5 +1,5 @@
 {
-  "title": "query with invalid type for lt",
+  "title": "query with invalid type (string) for lt",
   "input": {
     "WHERE": {
       "LT": {

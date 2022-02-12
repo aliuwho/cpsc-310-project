@@ -1,9 +1,9 @@
 {
-  "title": "query with invalid type for eq",
+  "title": "is query with *** throws InsightError",
   "input": {
     "WHERE": {
-      "EQ": {
-        "courses_avg": "23"
+      "IS": {
+		  "courses_title": "***"
       }
     },
     "OPTIONS": {
