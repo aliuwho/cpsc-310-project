@@ -33,13 +33,15 @@ export class IPerformQuery {
 				// orCollatedSections = [];
 			} else {
 				const andBlock = filterBlock["AND"];
+				let andCollatedSections: ISection[] = this.unchangedSections;
 				if (andBlock.length > 0) {
 					for (let filter of andBlock) {
-						sectionArray = this.mainWhereFilter(filter, sectionArray);
+						andCollatedSections = this.mainWhereFilter(filter, andCollatedSections);
 					}
+					sectionArray = andCollatedSections;
 				} else {
-					// Reject empty "OR" block array
-					throw new InsightError("OR must be a non-empty array");
+					// Reject empty "AND" block array
+					throw new InsightError("AND must be a non-empty array");
 				}
 			}
 		} else if (filterBlock["LT"] || filterBlock["EQ"] || filterBlock["GT"]) {
@@ -53,9 +55,16 @@ export class IPerformQuery {
 			// Negation
 			const negBlock = filterBlock["NOT"];
 			this.checkObjectLength(negBlock, "NOT");
-			let toBeExcludedSectionArray = this.mainWhereFilter(negBlock, sectionArray);
+			let toBeExcludedSectionArray: ISection[];
 			// Remove the originally filtered sections in NegBlock content (for negation):
 			// https://stackoverflow.com/questions/19957348/remove-all-elements-contained-in-another-array
+			if (sectionArray.length === 0) {
+				// New sectionArray
+				toBeExcludedSectionArray = this.mainWhereFilter(negBlock, this.unchangedSections);
+			} else {
+				// existing sectionArray (for OR/AND case)
+				toBeExcludedSectionArray = this.mainWhereFilter(negBlock, sectionArray);
+			}
 			sectionArray = this.unchangedSections.filter((section) => {
 				return !toBeExcludedSectionArray.includes(section);
 			});
@@ -90,8 +99,6 @@ export class IPerformQuery {
 		const filterValue = sComBlock[filterKeyString]; // field value
 		this.setOriginalDatasetAndCheckDataset(filterKeyString);
 
-		console.log(filterValue + " is type " + typeof filterValue);
-
 		if(!(specificFieldKey === "dept" || specificFieldKey === "id" || specificFieldKey === "instructor" ||
 			specificFieldKey === "title" || specificFieldKey === "uuid")) {
 			// Reject if field is not a MField
@@ -103,18 +110,32 @@ export class IPerformQuery {
 			throw new InsightError("SComparison Value is not a string");
 		}
 
+		if(filterValue.substring(1, filterValue.length - 1).includes("*")){
+			throw new InsightError("Asterisks (*) can only be the first or last characters of input strings");
+		}
+
 		if (sectionArray.length === 0) {
 			// New sectionArray
 			sectionArray = this.unchangedSections.filter((section: any) => {
-				return section[specificFieldKey] === filterValue;
+				return this.sCompFilterValueMatching(filterValue, section, specificFieldKey);
 			});
 		} else {
 			// existing sectionArray (for OR/AND case)
 			sectionArray = sectionArray.filter((section: any) => {
-				return section[specificFieldKey] === filterValue;
+				return this.sCompFilterValueMatching(filterValue, section, specificFieldKey);
 			});
 		}
 		return sectionArray;
+	}
+
+	public sCompFilterValueMatching(filterValue: string, section: any, specificFieldKey: string) {
+		if (filterValue.charAt(0) === "*") {
+			return section[specificFieldKey].endsWith(filterValue.substring(1, filterValue.length));
+		} else if (filterValue.charAt(filterValue.length - 1) === "*") {
+			return section[specificFieldKey].startsWith(filterValue.substring(0, filterValue.length - 1));
+		} else {
+			return section[specificFieldKey] === filterValue;
+		}
 	}
 
 	public mComparison(filterBlock: any, sectionArray: ISection[]): ISection[] {
@@ -141,7 +162,7 @@ export class IPerformQuery {
 			throw new InsightError(specificFieldKey + " is not a MField");
 		}
 
-		if (isNaN(filterValue)) {
+		if (!(typeof filterValue === "number")) {
 			// Reject if MComparison value is not a number
 			throw new InsightError("MComparison Value is not a number");
 		}
@@ -223,9 +244,34 @@ export class IPerformQuery {
 		}
 	}
 
+	public checkIfWhereBlockHasFiltered(filteredSections: ISection[], columnName: string): ISection[]{
+		if(filteredSections.length !== 0){
+			// WHERE block has filters and produced at least 1 results
+			return filteredSections;
+		}
+		if(this.originalDataset !== ""){
+			// WHERE block has filters and produced 0 results
+			return filteredSections;
+		} else {
+			// WHERE block does not have filters and produced 0 results
+			this.setOriginalDatasetAndCheckDataset(columnName);
+			return this.unchangedSections;
+		}
+	}
+
+	public checkIfKeyExistsInSection(specifiedField: string) {
+		if(!(specifiedField === "avg" || specifiedField === "pass" || specifiedField === "fail" ||
+			specifiedField === "audit" || specifiedField === "year" || specifiedField === "dept" ||
+			specifiedField === "id" || specifiedField === "instructor" ||
+			specifiedField === "title" || specifiedField === "uuid")) {
+			// Reject if Key does not exist in Section
+			throw new InsightError("Invalid key " + specifiedField + " in COLUMNS");
+		}
+	}
+
 	public orderFunction(orderField: string, columnArray: any, results: InsightResult[]): InsightResult[] {
 		// Sort by order
-		let finalResults: InsightResult[] = [];
+		let finalResults: InsightResult[] = results;
 		if (orderField) {
 			if (!(columnArray.includes(orderField))) {
 				// Reject if Order Field does not exist in Column Array

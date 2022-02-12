@@ -148,21 +148,19 @@ export default class InsightFacade implements IInsightFacade {
 			}
 			const columnArray = optionBlock["COLUMNS"];
 			const orderField = optionBlock["ORDER"];
-			if (columnArray.length <= 0) {
+			if (columnArray.length <= 0 || !(Array.isArray(columnArray))) {
 				// Reject if no COLUMN array is empty
 				throw new InsightError("COLUMNS must be a non-empty array");
 			}
-			// Swap column and section
+			// Check if WHERE block has filters, if not return the whole section array in the specified ZIP
+			filteredSections = performQueryTemp.checkIfWhereBlockHasFiltered(filteredSections, columnArray[0]);
+
 			for(let section of filteredSections){
 				// Go through every filteredSection to select specified values
 				let resultElementToBeAdded: any = {};
 				for(let columnName of columnArray) {
-					const splitKey = columnName.split("_");
-					const specifiedDatasetName = splitKey[0];
-					performQueryTemp.checkIfMultipleDatasets(specifiedDatasetName);
-					const specifiedField = splitKey[1] as keyof ISection;
-					// Add field into resultElementToBeAdded object
-					resultElementToBeAdded[columnName] = section[specifiedField];
+					resultElementToBeAdded = this.createFieldInResultElementToBeAdded(columnName,
+						performQueryTemp, resultElementToBeAdded, section);
 				}
 				// Add resultElementToBeAdded into results array
 				results.push(resultElementToBeAdded);
@@ -173,6 +171,18 @@ export default class InsightFacade implements IInsightFacade {
 			results = performQueryTemp.orderFunction(orderField, columnArray, results);
 			resolve(results);
 		});
+	}
+
+	private createFieldInResultElementToBeAdded(columnName: any, performQueryTemp: IPerformQuery,
+		resultElementToBeAdded: any, section: ISection): any {
+		const splitKey = columnName.split("_");
+		const specifiedDatasetName = splitKey[0];
+		performQueryTemp.checkIfMultipleDatasets(specifiedDatasetName);
+		const specifiedField = splitKey[1];
+		performQueryTemp.checkIfKeyExistsInSection(specifiedField);
+		// Add field into resultElementToBeAdded object
+		resultElementToBeAdded[columnName] = section[specifiedField as keyof ISection];
+		return resultElementToBeAdded;
 	}
 
 	public listDatasets(): Promise<InsightDataset[]> {

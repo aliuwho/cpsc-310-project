@@ -504,53 +504,6 @@ describe("InsightFacade", function () {
 		});
 	});
 
-	describe("Perform Query", function () {
-		let facade: IInsightFacade;
-
-		// before(async function () {
-		// 	clearDisk();
-		// 	facade = new InsightFacade();
-		// 	courses = getContentFromArchives("courses.zip");
-		// 	courses2 = getContentFromArchives("ten-courses.zip");
-		// 	await facade.addDataset("courses", courses, InsightDatasetKind.Courses);
-		// 	await facade.addDataset("courses-2", courses2, InsightDatasetKind.Courses);
-		// });
-
-		it("should run dynamic folder tests for performQuery", function () {
-			// Assert actual result is correct, regardless of order
-			function assertResult(actual: any, expected: Awaited<Output>): void | PromiseLike<void> {
-				expect(actual).to.have.deep.members(expected);
-			}
-
-			// Assert actual error is of expected type
-			function assertError(actual: any, expected: Error, input: Input): void | PromiseLike<void> {
-				if (expected === "InsightError") {
-					expect(actual).to.be.instanceof(InsightError);
-				} else if (expected === "ResultTooLargeError") {
-					expect(actual).to.be.instanceof(ResultTooLargeError);
-				} else if (expected === "NotFoundError") {
-					expect(actual).to.be.instanceof(NotFoundError);
-				} else {
-					// this should be unreachable
-					expect.fail("UNEXPECTED ERROR");
-				}
-			}
-
-			// Tests to dynamically check PerformQuery specifications
-			folderTest<Input, Output, Error>(
-				"PerformQuery Dynamic Tests",
-				(input: Input): Output => facade.performQuery(input),
-				"./test/resources/json/performQuery",
-				{
-					errorValidator: (error): error is Error =>
-						error === "InsightError" || error === "ResultTooLargeError" || error === "NotFoundError",
-					assertOnError: assertError,
-					assertOnResult: assertResult,
-				}
-			);
-		});
-	});
-
 	describe("PerformQuery", () => {
 		let insightFacade: IInsightFacade;
 		before(function () {
