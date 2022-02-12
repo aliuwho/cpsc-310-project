@@ -13,32 +13,30 @@ export class IPerformQuery {
 		this.originalDataset = "";
 	}
 
-	public mainWhereFilter(filterBlock: any, sectionArray: ISection[]): ISection[] {
-		// May need to instantiate a new variable to return (resultFilteredSections)
+	public mainWhereFilter(filterBlock: any): ISection[] {
+		let finalResult: ISection[] = [];
 		if (filterBlock["OR"] || filterBlock["AND"]) {
+			let collatedResultArray: ISection[][] = [];
 			if (filterBlock["OR"]) {
 				const orBlock = filterBlock["OR"];
-				let orCollatedSections: ISection[] = [];
 				if (orBlock.length > 0) {
 					for (let filter of orBlock) {
-						let oneFilteredSectionArray = this.mainWhereFilter(filter, this.unchangedSections);
-						orCollatedSections = orCollatedSections.concat(oneFilteredSectionArray);
+						let filteredSectionArray = this.mainWhereFilter(filter);
+						collatedResultArray.push(filteredSectionArray);
 					}
+					finalResult = this.filterOr(collatedResultArray);
 				} else {
 					// Reject empty "OR" block array
 					throw new InsightError("OR must be a non-empty array");
 				}
-				sectionArray = this.arrayUnique(orCollatedSections);
-				// // Clear orCollatedSections for next query
-				// orCollatedSections = [];
 			} else {
 				const andBlock = filterBlock["AND"];
-				let andCollatedSections: ISection[] = this.unchangedSections;
 				if (andBlock.length > 0) {
 					for (let filter of andBlock) {
-						andCollatedSections = this.mainWhereFilter(filter, andCollatedSections);
+						let filteredSectionArray = this.mainWhereFilter(filter);
+						collatedResultArray.push(filteredSectionArray);
 					}
-					sectionArray = andCollatedSections;
+					finalResult = this.filterAnd(collatedResultArray);
 				} else {
 					// Reject empty "AND" block array
 					throw new InsightError("AND must be a non-empty array");
@@ -46,49 +44,55 @@ export class IPerformQuery {
 			}
 		} else if (filterBlock["LT"] || filterBlock["EQ"] || filterBlock["GT"]) {
 			// M Comparison
-			sectionArray = this.mComparison(filterBlock, sectionArray);
+			finalResult = this.mComparison(filterBlock);
 		} else if (filterBlock["IS"]) {
 			// S Comparison
-			sectionArray = this.sComparison(filterBlock, sectionArray);
+			finalResult = this.sComparison(filterBlock);
 
 		} else if (filterBlock["NOT"]) {
 			// Negation
 			const negBlock = filterBlock["NOT"];
 			this.checkObjectLength(negBlock, "NOT");
 			let toBeExcludedSectionArray: ISection[];
+			toBeExcludedSectionArray = this.mainWhereFilter(negBlock);
 			// Remove the originally filtered sections in NegBlock content (for negation):
 			// https://stackoverflow.com/questions/19957348/remove-all-elements-contained-in-another-array
-			if (sectionArray.length === 0) {
-				// New sectionArray
-				toBeExcludedSectionArray = this.mainWhereFilter(negBlock, this.unchangedSections);
-			} else {
-				// existing sectionArray (for OR/AND case)
-				toBeExcludedSectionArray = this.mainWhereFilter(negBlock, sectionArray);
-			}
-			sectionArray = this.unchangedSections.filter((section) => {
+			finalResult = this.unchangedSections.filter((section) => {
 				return !toBeExcludedSectionArray.includes(section);
 			});
 		} else {
 			// Reject if invalid key
 			throw new InsightError("Invalid key");
 		}
-		return sectionArray;
+		return finalResult;
 	}
 
-	// To make a unique array: https://stackoverflow.com/questions/1584370/how-to-merge-two-arrays-in-javascript-and-de-duplicate-items
-	public arrayUnique(sectionArray: ISection[]): ISection[] {
-		let tempArray = sectionArray.concat();
-		for (let i = 0; i < tempArray.length; ++i) {
-			for (let j = i + 1; j < tempArray.length; ++j) {
-				if (tempArray[i] === tempArray[j]) {
-					tempArray.splice(j--, 1);
+	public filterOr(collatedResultArray: ISection[][]): ISection[] {
+		let finalArray: ISection[] = [];
+		for(let currentArray of collatedResultArray){
+			finalArray = finalArray.concat(currentArray);
+		}
+		for(let i = 0; i < finalArray.length; ++i) {
+			for(let j = i + 1; j < finalArray.length; ++j) {
+				if(finalArray[i] === finalArray[j]) {
+					finalArray.splice(j--, 1);
 				}
 			}
 		}
-		return tempArray;
+		return finalArray;
 	}
 
-	public sComparison(filterBlock: any, sectionArray: ISection[]): ISection[] {
+	public filterAnd(collatedResultArray: ISection[][]): ISection[] {
+		let finalArray = collatedResultArray[0];
+		for(let i = 1; i < collatedResultArray.length; i++) {
+			finalArray = finalArray.filter((section) => {
+				return collatedResultArray[i].includes(section);
+			});
+		}
+		return finalArray;
+	}
+
+	public sComparison(filterBlock: any): ISection[] {
 		const sComBlock = filterBlock["IS"];
 		this.checkObjectLength(sComBlock, "IS");
 		// Getting individual values
@@ -114,18 +118,11 @@ export class IPerformQuery {
 			throw new InsightError("Asterisks (*) can only be the first or last characters of input strings");
 		}
 
-		if (sectionArray.length === 0) {
-			// New sectionArray
-			sectionArray = this.unchangedSections.filter((section: any) => {
-				return this.sCompFilterValueMatching(filterValue, section, specificFieldKey);
-			});
-		} else {
-			// existing sectionArray (for OR/AND case)
-			sectionArray = sectionArray.filter((section: any) => {
-				return this.sCompFilterValueMatching(filterValue, section, specificFieldKey);
-			});
-		}
-		return sectionArray;
+		let resultArray = this.unchangedSections.filter((section: any) => {
+			return this.sCompFilterValueMatching(filterValue, section, specificFieldKey);
+		});
+
+		return resultArray;
 	}
 
 	public sCompFilterValueMatching(filterValue: string, section: any, specificFieldKey: string) {
@@ -138,7 +135,7 @@ export class IPerformQuery {
 		}
 	}
 
-	public mComparison(filterBlock: any, sectionArray: ISection[]): ISection[] {
+	public mComparison(filterBlock: any): ISection[] {
 		let mComBlock: any = {};
 		if (filterBlock["LT"]) {
 			mComBlock = filterBlock["LT"];
@@ -166,45 +163,26 @@ export class IPerformQuery {
 			// Reject if MComparison value is not a number
 			throw new InsightError("MComparison Value is not a number");
 		}
-		sectionArray = this.mComparisonFilter(filterBlock, sectionArray, specificFieldKey, filterValue);
-		return sectionArray;
+		let resultArray  = this.mComparisonFilter(filterBlock, specificFieldKey, filterValue);
+		return resultArray ;
 	}
 
-	public mComparisonFilter(filterBlock: any, sectionArray: ISection[], specificFieldKey: string, filterValue: any) {
-		if (sectionArray.length === 0) {
-			// New sectionArray
-			let index = 0;
-			return this.unchangedSections.filter((section: any) => {
-				if (specificFieldKey in section) {
-					if (filterBlock["LT"]) {
-						return section[specificFieldKey] < filterValue;
-					} else if (filterBlock["EQ"]) {
-						return section[specificFieldKey] === filterValue;
-					} else {
-						return section[specificFieldKey] > filterValue;
-					}
+	public mComparisonFilter(filterBlock: any, specificFieldKey: string, filterValue: any) {
+		// New sectionArray
+		return this.unchangedSections.filter((section: any) => {
+			if (specificFieldKey in section) {
+				if (filterBlock["LT"]) {
+					return section[specificFieldKey] < filterValue;
+				} else if (filterBlock["EQ"]) {
+					return section[specificFieldKey] === filterValue;
 				} else {
-					// Reject if key is invalid
-					throw new InsightError("Invalid key " + specificFieldKey);
+					return section[specificFieldKey] > filterValue;
 				}
-			});
-		} else {
-			// existing sectionArray (for OR/AND case)
-			return sectionArray.filter((section: any) => {
-				if (specificFieldKey in section) {
-					if (filterBlock["LT"]) {
-						return section[specificFieldKey] < filterValue;
-					} else if (filterBlock["EQ"]) {
-						return section[specificFieldKey] === filterValue;
-					} else {
-						return section[specificFieldKey] > filterValue;
-					}
-				} else {
-					// Reject if key is invalid
-					throw new InsightError("Invalid key " + specificFieldKey);
-				}
-			});
-		}
+			} else {
+				// Reject if key is invalid
+				throw new InsightError("Invalid key " + specificFieldKey);
+			}
+		});
 	}
 
 	public checkObjectLength(block: any, filterWord: string): void {
