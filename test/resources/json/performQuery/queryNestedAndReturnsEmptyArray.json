@@ -4,24 +4,28 @@
     "WHERE": {
       "AND": [
         {
-          "NOT": {
-            "LT": {
-              "courses_audit": 3
-            }
-          }
-        },
-        {
           "IS": {
-            "courses_dept": "cpsc"
+            "courses_dept": "invalidCourse"
           }
         },
         {
-          "NOT": {
-            "IS": {
-              "courses_title": "m.sc major essay"
-            }
-          }
-        }
+          "AND": [
+            {
+              "NOT": {
+            		"LT": {
+              		"courses_audit": 3
+            		}
+              }
+            },
+            {
+          		"NOT": {
+           		 "IS": {
+             		 "courses_title": "m.sc major essay"
+            		}
+          		}
+        		}
+            ]
+         }
       ]
     },
     "OPTIONS": {

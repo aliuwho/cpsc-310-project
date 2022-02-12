@@ -138,7 +138,7 @@ export default class InsightFacade implements IInsightFacade {
 			// WHERE block manipulation
 			if(Object.keys(whereBlock).length > 0){
 				performQueryTemp.checkObjectLength(whereBlock, "WHERE");
-				filteredSections = performQueryTemp.mainWhereFilter(whereBlock, []);
+				filteredSections = performQueryTemp.mainWhereFilter(whereBlock);
 			}
 			// OPTIONS block manipulation
 			if (!(optionBlock["COLUMNS"])) {
