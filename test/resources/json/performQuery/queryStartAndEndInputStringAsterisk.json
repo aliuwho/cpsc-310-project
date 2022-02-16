@@ -1,0 +1,18 @@
+{
+  "title": "Query Key Input Start and End String has Asterisk",
+  "input": {
+    "WHERE": {
+      "IS": {
+        "courses_uuid": "*3500*"
+      }
+    },
+    "OPTIONS": {
+      "COLUMNS": [
+        "courses_title",
+        "courses_uuid"
+      ]
+    }
+  },
+  "errorExpected": false,
+  "expected":[{"courses_title":"supply chain mng","courses_uuid":"35000"},{"courses_title":"supply chain mng","courses_uuid":"35001"},{"courses_title":"found re apprai","courses_uuid":"73500"},{"courses_title":"computl ling 1","courses_uuid":"83500"},{"courses_title":"res meth educ","courses_uuid":"35004"},{"courses_title":"res meth educ","courses_uuid":"35005"},{"courses_title":"res meth educ","courses_uuid":"35006"},{"courses_title":"res meth educ","courses_uuid":"35007"},{"courses_title":"res meth educ","courses_uuid":"35008"},{"courses_title":"des tech","courses_uuid":"35009"},{"courses_title":"intr econ geog","courses_uuid":"3500"},{"courses_title":"ling thry&anl i","courses_uuid":"63500"},{"courses_title":"masters thesis","courses_uuid":"43500"},{"courses_title":"pro prct i","courses_uuid":"33500"}]
+}

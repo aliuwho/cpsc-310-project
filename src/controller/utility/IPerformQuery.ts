@@ -106,27 +106,32 @@ export class IPerformQuery {
 		if(!(specificFieldKey === "dept" || specificFieldKey === "id" || specificFieldKey === "instructor" ||
 			specificFieldKey === "title" || specificFieldKey === "uuid")) {
 			// Reject if field is not a MField
-			throw new InsightError(specificFieldKey + " is not a MField");
+			throw new InsightError(specificFieldKey + " is not a SField");
 		}
 
 		if (!(typeof filterValue === "string")) {
 			// Reject if SComparison value is not a string
 			throw new InsightError("SComparison Value is not a string");
 		}
+		let resultArray = [];
+		if (filterValue === "*"){
+			resultArray = this.unchangedSections;
+		} else {
+			if(filterValue.substring(1, filterValue.length - 1).includes("*")){
+				throw new InsightError("Asterisks (*) can only be the first or last characters of input strings");
+			}
 
-		if(filterValue.substring(1, filterValue.length - 1).includes("*")){
-			throw new InsightError("Asterisks (*) can only be the first or last characters of input strings");
+			resultArray = this.unchangedSections.filter((section: any) => {
+				return this.sCompFilterValueMatching(filterValue, section, specificFieldKey);
+			});
 		}
-
-		let resultArray = this.unchangedSections.filter((section: any) => {
-			return this.sCompFilterValueMatching(filterValue, section, specificFieldKey);
-		});
-
 		return resultArray;
 	}
 
 	public sCompFilterValueMatching(filterValue: string, section: any, specificFieldKey: string) {
-		if (filterValue.charAt(0) === "*") {
+		if (filterValue.charAt(0) === "*" && filterValue.charAt(filterValue.length - 1) === "*") {
+			return section[specificFieldKey].includes(filterValue.substring(1, filterValue.length - 1));
+		} else if (filterValue.charAt(0) === "*") {
 			return section[specificFieldKey].endsWith(filterValue.substring(1, filterValue.length));
 		} else if (filterValue.charAt(filterValue.length - 1) === "*") {
 			return section[specificFieldKey].startsWith(filterValue.substring(0, filterValue.length - 1));
