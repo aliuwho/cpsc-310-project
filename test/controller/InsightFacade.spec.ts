@@ -10,25 +10,16 @@ import InsightFacade from "../../src/controller/InsightFacade";
 import {expect, use} from "chai";
 import {clearDisk, getContentFromArchives} from "../TestUtil";
 import {folderTest} from "@ubccpsc310/folder-test";
-import {ISection} from "../../src/controller/interface/ISection";
-import {existsSync, mkdirSync} from "fs";
-import {IElement} from "../../src/controller/interface/IElement";
 import * as fs from "fs-extra";
-import {getKeys, writeCourseSections} from "../../src/controller/utility/IUtility";
-import {parseFile, parseFileContent} from "../../src/controller/utility/IParse";
+// import {getKeys, writeCourseSections} from "../../src/controller/utility/IUtility";
+// import {parseFile, parseFileContent} from "../../src/controller/utility/IParse";
 import JSZip from "jszip";
 import chaiAsPromised from "chai-as-promised";
 
 use(chaiAsPromised);
 
-// For folderTest
-type Input = unknown;
-type Output = Promise<InsightResult[]>;
-type Error = "InsightError" | "ResultTooLargeError";
-
 describe("InsightFacade", function () {
 	let courses: string;
-	let courses2: string;
 
 	before(function () {
 		courses = getContentFromArchives("courses.zip");
@@ -385,6 +376,10 @@ describe("InsightFacade", function () {
 					} else {
 						expect(actual).to.be.instanceof(InsightError);
 					}
+				},
+				assertOnResult(actual, expected){
+					expect(actual).to.have.deep.members(expected);
+					expect(actual).to.be.same.length(expected.length);
 				},
 			}
 		);

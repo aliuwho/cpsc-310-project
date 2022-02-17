@@ -1,0 +1,18 @@
+{
+  "title": "Query Key Input Single Asterisk",
+  "input": {
+    "WHERE": {
+      "IS": {
+        "courses_uuid": "*"
+      }
+    },
+    "OPTIONS": {
+      "COLUMNS": [
+        "courses_title",
+        "courses_uuid"
+      ]
+    }
+  },
+  "errorExpected": true,
+  "expected": "ResultTooLargeError"
+}
