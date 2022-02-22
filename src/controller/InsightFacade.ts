@@ -4,15 +4,16 @@ import {
 	InsightDatasetKind,
 	InsightError,
 	InsightResult,
-	NotFoundError, ResultTooLargeError,
+	NotFoundError,
+	ResultTooLargeError,
 } from "./IInsightFacade";
 import * as fs from "fs";
 import JSZip from "jszip";
 import {IElement} from "./interface/IElement";
 import {getDatasets, getKeys} from "./utility/IUtility";
-import {parseFile} from "./utility/IParse";
+import {parseAndWriteJsonFile} from "./utility/IParse";
 import {IPerformQuery} from "./utility/IPerformQuery";
-import {ISection} from "./interface/ISection";
+import {IKind, ISection} from "./interface/IKind";
 
 /**
  * This is the main programmatic entry point for the project.
@@ -47,7 +48,7 @@ export default class InsightFacade implements IInsightFacade {
 	 * @param content
 	 * @param kind
 	 */
-	public addDataset(id: string, content: string, kind: InsightDatasetKind): Promise<string[]> {
+	public async addDataset(id: string, content: string, kind: InsightDatasetKind): Promise<string[]> {
 		if (this.datasets.has(id)) {
 			return Promise.reject(new InsightError("The dataset already exists"));
 		} else if (id.search("_+") > -1) {
@@ -60,39 +61,38 @@ export default class InsightFacade implements IInsightFacade {
 
 			// parse zip contents and write to disk and memory
 			let jsZip = new JSZip();
-			return jsZip.loadAsync(content, {base64: true}).then((loadedZip) => {
-				let folderZip = loadedZip.folder("courses");
-				if (folderZip != null) {
-					// parse the files in the zip under the courses directory
-					let promisedSections: any[] = [];
-					folderZip.forEach(async function (relativePath, file) {
-						let sections = parseFile(file, datasetPath + "/courses/" + relativePath + ".json");
-						promisedSections = promisedSections.concat(sections);
-					});
-					// process promised sections into disk and memory
-					return Promise.all(promisedSections).then((awaitedSections) => {
-						awaitedSections = awaitedSections.reduce((accumulator, value) => accumulator.concat(value), []);
-						if (awaitedSections.length === 0) {
-							const error = new InsightError("The dataset did not contain any valid sections");
-							return Promise.reject(error);
-						} else {
-							this.datasets.set(id, {
-								sections: awaitedSections,
-								info: {
-									id: id,
-									kind: InsightDatasetKind.Courses,
-									numRows: awaitedSections.length,
-								},
-							});
-							// grab keys and return
-							let keys = getKeys(this.datasets);
-							return Promise.resolve<string[]>(keys);
-						}
-					});
-				} else {
-					return Promise.reject(new InsightError("The dataset did not contain a courses folder"));
-				}
-			});
+			const loadedZip = await jsZip.loadAsync(content, {base64: true});
+			let folderZip = loadedZip.folder("courses");
+			if (folderZip != null) {
+				// parse the files in the zip under the courses directory
+				let promisedSections: any[] = [];
+				folderZip.forEach(function (relativePath, file) {
+					let sections = parseAndWriteJsonFile(file, datasetPath + "/courses/" + relativePath + ".json");
+					promisedSections = promisedSections.concat(sections);
+				});
+				// process promised sections into disk and memory
+				return Promise.all(promisedSections).then((awaitedSections) => {
+					awaitedSections = awaitedSections.reduce((accumulator, value) => accumulator.concat(value), []);
+					if (awaitedSections.length === 0) {
+						const error = new InsightError("The dataset did not contain any valid sections");
+						return Promise.reject(error);
+					} else {
+						this.datasets.set(id, {
+							kinds: awaitedSections,
+							info: {
+								id: id,
+								kind: InsightDatasetKind.Courses,
+								numRows: awaitedSections.length,
+							},
+						});
+						// grab keys and return
+						let keys = getKeys(this.datasets);
+						return Promise.resolve<string[]>(keys);
+					}
+				});
+			} else {
+				return Promise.reject(new InsightError("The dataset did not contain a courses folder"));
+			}
 		} else {
 			return Promise.reject(new InsightError("The dataset contained only whitespace"));
 		}
@@ -134,9 +134,9 @@ export default class InsightFacade implements IInsightFacade {
 
 			const whereBlock = tempQuery["WHERE"];
 			const optionBlock = tempQuery["OPTIONS"];
-			let filteredSections: ISection[] = [];
+			let filteredSections: IKind[] = [];
 			// WHERE block manipulation
-			if(Object.keys(whereBlock).length > 0){
+			if (Object.keys(whereBlock).length > 0) {
 				performQueryTemp.checkObjectLength(whereBlock, "WHERE");
 				filteredSections = performQueryTemp.mainWhereFilter(whereBlock);
 			}
@@ -154,10 +154,10 @@ export default class InsightFacade implements IInsightFacade {
 			// Check if WHERE block has filters, if not return the whole section array in the specified ZIP
 			filteredSections = performQueryTemp.checkIfWhereBlockHasFiltered(filteredSections, columnArray[0]);
 
-			for(let section of filteredSections){
+			for (let section of filteredSections) {
 				// Go through every filteredSection to select specified values
 				let resultElementToBeAdded: any = {};
-				for(let columnName of columnArray) {
+				for (let columnName of columnArray) {
 					resultElementToBeAdded = this.createFieldInResultElementToBeAdded(columnName,
 						performQueryTemp, resultElementToBeAdded, section);
 				}
@@ -173,14 +173,14 @@ export default class InsightFacade implements IInsightFacade {
 	}
 
 	private createFieldInResultElementToBeAdded(columnName: any, performQueryTemp: IPerformQuery,
-		resultElementToBeAdded: any, section: ISection): any {
+		resultElementToBeAdded: any, section: IKind): any {
 		const splitKey = columnName.split("_");
 		const specifiedDatasetName = splitKey[0];
 		performQueryTemp.checkIfMultipleDatasets(specifiedDatasetName);
 		const specifiedField = splitKey[1];
 		performQueryTemp.checkIfKeyExistsInSection(specifiedField);
 		// Add field into resultElementToBeAdded object
-		resultElementToBeAdded[columnName] = section[specifiedField as keyof ISection];
+		resultElementToBeAdded[columnName] = (section as ISection)[specifiedField as keyof ISection];
 		return resultElementToBeAdded;
 	}
 

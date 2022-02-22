@@ -1,6 +1,6 @@
-import {ISection} from "../interface/ISection";
 import {writeCourseSections} from "./IUtility";
 import JSZip from "jszip";
+import {ISection} from "../interface/IKind";
 
 // Helper function for parseFileContent
 // Returns true if a section object is valid and can be parsed into a section
@@ -39,7 +39,7 @@ async function parseSectionObj(sectionObj: any): Promise<ISection> {
 
 // Helper function for parseFile
 // Parses a JSON file containing course sections into an array of ISections
-export async function parseFileContent(fileContent: string): Promise<ISection[]> {
+export async function parseJsonToCourseSections(fileContent: string): Promise<ISection[]> {
 	const promises: any[] = [];
 	try {
 		// lowercase for more robust key handling
@@ -59,12 +59,12 @@ export async function parseFileContent(fileContent: string): Promise<ISection[]>
 }
 
 // Parses a JSZip object representing a file into course sections and writes sections to filePath in JSON format
-export async function parseFile(file: JSZip.JSZipObject, filePath: string): Promise<ISection[]> {
+export async function parseAndWriteJsonFile(file: JSZip.JSZipObject, filePath: string): Promise<ISection[]> {
 	return file.async("string").then(async (fileContent) => {
 		// parse file's contents
 		// lowercase string for robust key handling
 		let courseSections: ISection[] = [];
-		return parseFileContent(fileContent).then((awaited) => {
+		return parseJsonToCourseSections(fileContent).then((awaited) => {
 			if (awaited.length > 0) {
 				courseSections = courseSections.concat(awaited);
 				writeCourseSections(courseSections, filePath);

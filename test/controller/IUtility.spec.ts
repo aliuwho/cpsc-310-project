@@ -3,14 +3,13 @@ import {clearDisk, getContentFromArchives} from "../TestUtil";
 import {existsSync, mkdirSync} from "fs";
 import {expect} from "chai";
 import {IElement} from "../../src/controller/interface/IElement";
-import {ISection} from "../../src/controller/interface/ISection";
+import {ISection} from "../../src/controller/interface/IKind";
 import * as fs from "fs-extra";
 import {getKeys, writeCourseSections} from "../../src/controller/utility/IUtility";
-import {parseFile, parseFileContent} from "../../src/controller/utility/IParse";
+import {parseAndWriteJsonFile, parseJsonToCourseSections} from "../../src/controller/utility/IParse";
 import JSZip from "jszip";
 
 describe("IUtility", function () {
-
 	describe("Utility Tests", function () {
 		let testDatasets: Map<string, IElement>;
 		const section1: ISection = {
@@ -73,7 +72,7 @@ describe("IUtility", function () {
 		describe("getKeys tests", function () {
 			it("should return the keys for a dataset structure", function () {
 				const elem1: IElement = {
-					sections: courseSections,
+					kinds: courseSections,
 					info: {id: "testElem", kind: InsightDatasetKind.Courses, numRows: 3},
 				};
 				testDatasets.set("testElem", elem1);
@@ -83,12 +82,12 @@ describe("IUtility", function () {
 
 			it("should return the keys for multiple dataset structures", function () {
 				const elem1: IElement = {
-					sections: courseSections,
+					kinds: courseSections,
 					info: {id: "testElem", kind: InsightDatasetKind.Courses, numRows: 3},
 				};
 				testDatasets.set("testElem", elem1);
 				const elem2: IElement = {
-					sections: courseSections,
+					kinds: courseSections,
 					info: {id: "testElem2", kind: InsightDatasetKind.Courses, numRows: 3},
 				};
 				testDatasets.set("testElem2", elem2);
@@ -100,25 +99,27 @@ describe("IUtility", function () {
 		describe("parseFileContent tests", function () {
 			it("should parse a valid JSON file with one course section", async function () {
 				let data = fs.readFileSync("test/resources/json/utility/validJson.json").toString();
-				let output = await parseFileContent(data);
+				let output = await parseJsonToCourseSections(data);
 				expect(output).to.have.length(1);
-				expect(output).to.deep.equal([{
-					dept: "aanb",
-					id: "504",
-					avg: 94.44,
-					instructor: "",
-					title: "rsrch methdlgy",
-					pass: 9,
-					fail: 0,
-					audit: 9,
-					uuid: "31379",
-					year: 2015,
-				}]);
+				expect(output).to.deep.equal([
+					{
+						dept: "aanb",
+						id: "504",
+						avg: 94.44,
+						instructor: "",
+						title: "rsrch methdlgy",
+						pass: 9,
+						fail: 0,
+						audit: 9,
+						uuid: "31379",
+						year: 2015,
+					},
+				]);
 			});
 
 			it("should parse a valid JSON file for multiple course sections", async function () {
 				let data = fs.readFileSync("test/resources/json/utility/validJsonThreeSections.json").toString();
-				let output = await parseFileContent(data);
+				let output = await parseJsonToCourseSections(data);
 				expect(output).to.have.length(3);
 				expect(output).to.have.deep.members(courseSections);
 			});
@@ -132,7 +133,7 @@ describe("IUtility", function () {
 					let obj = jsZip2.file("validJson.json");
 					expect(obj).to.be.not.null;
 					if (obj) {
-						parseFile(obj, "./data/validJson/courses/aanb002.json").then((output) => {
+						parseAndWriteJsonFile(obj, "./data/validJson/courses/aanb002.json").then((output) => {
 							expect(output).to.have.length(1);
 							expect(output).to.have.deep.members(courseSections);
 						});
@@ -148,7 +149,7 @@ describe("IUtility", function () {
 				let obj = jsZip2.file("validJson.json");
 				expect(obj).to.be.not.null;
 				if (obj) {
-					parseFile(obj, "./data/validJson/courses/aanb002.json").then((output) => {
+					parseAndWriteJsonFile(obj, "./data/validJson/courses/aanb002.json").then((output) => {
 						expect(output).to.have.length(1);
 						expect(output).to.have.deep.members(courseSections);
 					});
@@ -163,7 +164,7 @@ describe("IUtility", function () {
 				let obj = jsZip2.file("invalidJson.json");
 				expect(obj).to.be.not.null;
 				if (obj) {
-					parseFile(obj, "./data/validJson/courses/aanb002.json").then((output) => {
+					parseAndWriteJsonFile(obj, "./data/validJson/courses/aanb002.json").then((output) => {
 						expect(output).to.have.length(0);
 					});
 				}

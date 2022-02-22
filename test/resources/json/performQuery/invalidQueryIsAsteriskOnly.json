@@ -1,5 +1,5 @@
 {
-  "title": "is query with * throws InsightError",
+  "title": "is query with * throws ResultTooLargeError",
   "input": {
     "WHERE": {
       "IS": {
@@ -16,5 +16,5 @@
   },
   "errorExpected": true,
   "verbose": false,
-  "expected": "InsightError"
+  "expected": "ResultTooLargeError"
 }
