@@ -74,6 +74,7 @@ export default class InsightFacade implements IInsightFacade {
 				return Promise.all(promisedSections).then((awaitedSections) => {
 					awaitedSections = awaitedSections.reduce((accumulator, value) => accumulator.concat(value), []);
 					if (awaitedSections.length === 0) {
+						fs.rmSync(datasetPath, {recursive: true}); // remove the dir we created
 						const error = new InsightError("The dataset did not contain any valid sections");
 						return Promise.reject(error);
 					} else {
