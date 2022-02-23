@@ -34,6 +34,9 @@ async function parseSectionObj(sectionObj: any): Promise<ISection> {
 		uuid: sectionObj.id.toString(),
 		year: parseInt(sectionObj.year, 10),
 	};
+	if (sectionObj.section === "overall") {
+		section.year = 1900;
+	}
 	return Promise.resolve(section);
 }
 
