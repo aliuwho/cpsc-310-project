@@ -1,9 +1,9 @@
-import {ISection} from "../interface/ISection";
 import {InsightError, InsightResult} from "../IInsightFacade";
 import {IElement} from "../interface/IElement";
+import {IKind} from "../interface/IKind";
 
 export class IPerformQuery {
-	protected unchangedSections: ISection[];
+	protected unchangedSections: IKind[];
 	protected originalDataset;
 	protected datasets: Map<string, IElement>;
 
@@ -13,10 +13,10 @@ export class IPerformQuery {
 		this.originalDataset = "";
 	}
 
-	public mainWhereFilter(filterBlock: any): ISection[] {
-		let finalResult: ISection[] = [];
+	public mainWhereFilter(filterBlock: any): IKind[] {
+		let finalResult: IKind[] = [];
 		if (filterBlock["OR"] || filterBlock["AND"]) {
-			let collatedResultArray: ISection[][] = [];
+			let collatedResultArray: IKind[][] = [];
 			if (filterBlock["OR"]) {
 				const orBlock = filterBlock["OR"];
 				if (orBlock.length > 0) {
@@ -53,7 +53,7 @@ export class IPerformQuery {
 			// Negation
 			const negBlock = filterBlock["NOT"];
 			this.checkObjectLength(negBlock, "NOT");
-			let toBeExcludedSectionArray: ISection[];
+			let toBeExcludedSectionArray: IKind[];
 			toBeExcludedSectionArray = this.mainWhereFilter(negBlock);
 			// Remove the originally filtered sections in NegBlock content (for negation):
 			// https://stackoverflow.com/questions/19957348/remove-all-elements-contained-in-another-array
@@ -67,14 +67,14 @@ export class IPerformQuery {
 		return finalResult;
 	}
 
-	public filterOr(collatedResultArray: ISection[][]): ISection[] {
-		let finalArray: ISection[] = [];
-		for(let currentArray of collatedResultArray){
+	public filterOr(collatedResultArray: IKind[][]): IKind[] {
+		let finalArray: IKind[] = [];
+		for (let currentArray of collatedResultArray) {
 			finalArray = finalArray.concat(currentArray);
 		}
-		for(let i = 0; i < finalArray.length; ++i) {
-			for(let j = i + 1; j < finalArray.length; ++j) {
-				if(finalArray[i] === finalArray[j]) {
+		for (let i = 0; i < finalArray.length; ++i) {
+			for (let j = i + 1; j < finalArray.length; ++j) {
+				if (finalArray[i] === finalArray[j]) {
 					finalArray.splice(j--, 1);
 				}
 			}
@@ -82,9 +82,9 @@ export class IPerformQuery {
 		return finalArray;
 	}
 
-	public filterAnd(collatedResultArray: ISection[][]): ISection[] {
+	public filterAnd(collatedResultArray: IKind[][]): IKind[] {
 		let finalArray = collatedResultArray[0];
-		for(let i = 1; i < collatedResultArray.length; i++) {
+		for (let i = 1; i < collatedResultArray.length; i++) {
 			finalArray = finalArray.filter((section) => {
 				return collatedResultArray[i].includes(section);
 			});
@@ -92,7 +92,7 @@ export class IPerformQuery {
 		return finalArray;
 	}
 
-	public sComparison(filterBlock: any): ISection[] {
+	public sComparison(filterBlock: any): IKind[] {
 		const sComBlock = filterBlock["IS"];
 		this.checkObjectLength(sComBlock, "IS");
 		// Getting individual values
@@ -103,7 +103,7 @@ export class IPerformQuery {
 		const filterValue = sComBlock[filterKeyString]; // field value
 		this.setOriginalDatasetAndCheckDataset(filterKeyString);
 
-		if(!(specificFieldKey === "dept" || specificFieldKey === "id" || specificFieldKey === "instructor" ||
+		if (!(specificFieldKey === "dept" || specificFieldKey === "id" || specificFieldKey === "instructor" ||
 			specificFieldKey === "title" || specificFieldKey === "uuid")) {
 			// Reject if field is not a MField
 			throw new InsightError(specificFieldKey + " is not a SField");
@@ -114,10 +114,10 @@ export class IPerformQuery {
 			throw new InsightError("SComparison Value is not a string");
 		}
 		let resultArray = [];
-		if (filterValue === "*"){
+		if (filterValue === "*") {
 			resultArray = this.unchangedSections;
 		} else {
-			if(filterValue.substring(1, filterValue.length - 1).includes("*")){
+			if (filterValue.substring(1, filterValue.length - 1).includes("*")) {
 				throw new InsightError("Asterisks (*) can only be the first or last characters of input strings");
 			}
 
@@ -140,7 +140,7 @@ export class IPerformQuery {
 		}
 	}
 
-	public mComparison(filterBlock: any): ISection[] {
+	public mComparison(filterBlock: any): IKind[] {
 		let mComBlock: any = {};
 		if (filterBlock["LT"]) {
 			mComBlock = filterBlock["LT"];
@@ -158,7 +158,7 @@ export class IPerformQuery {
 		const filterValue = mComBlock[filterKeyString]; // field value
 		this.setOriginalDatasetAndCheckDataset(filterKeyString);
 
-		if(!(specificFieldKey === "avg" || specificFieldKey === "pass" || specificFieldKey === "fail" ||
+		if (!(specificFieldKey === "avg" || specificFieldKey === "pass" || specificFieldKey === "fail" ||
 			specificFieldKey === "audit" || specificFieldKey === "year")) {
 			// Reject if field is not a MField
 			throw new InsightError(specificFieldKey + " is not a MField");
@@ -168,8 +168,8 @@ export class IPerformQuery {
 			// Reject if MComparison value is not a number
 			throw new InsightError("MComparison Value is not a number");
 		}
-		let resultArray  = this.mComparisonFilter(filterBlock, specificFieldKey, filterValue);
-		return resultArray ;
+		let resultArray = this.mComparisonFilter(filterBlock, specificFieldKey, filterValue);
+		return resultArray;
 	}
 
 	public mComparisonFilter(filterBlock: any, specificFieldKey: string, filterValue: any) {
@@ -209,7 +209,7 @@ export class IPerformQuery {
 				this.originalDataset = datasetName;
 				const originalIElement = this.datasets.get(this.originalDataset);
 				if (originalIElement) {
-					this.unchangedSections = originalIElement.sections;
+					this.unchangedSections = originalIElement.kinds;
 				} else {
 					// Reject if dataset has not been added
 					throw new InsightError(this.originalDataset + " has not been added");
@@ -227,12 +227,12 @@ export class IPerformQuery {
 		}
 	}
 
-	public checkIfWhereBlockHasFiltered(filteredSections: ISection[], columnName: string): ISection[]{
-		if(filteredSections.length !== 0){
+	public checkIfWhereBlockHasFiltered(filteredSections: IKind[], columnName: string): IKind[] {
+		if (filteredSections.length !== 0) {
 			// WHERE block has filters and produced at least 1 results
 			return filteredSections;
 		}
-		if(this.originalDataset !== ""){
+		if (this.originalDataset !== "") {
 			// WHERE block has filters and produced 0 results
 			return filteredSections;
 		} else {
@@ -243,7 +243,7 @@ export class IPerformQuery {
 	}
 
 	public checkIfKeyExistsInSection(specifiedField: string) {
-		if(!(specifiedField === "avg" || specifiedField === "pass" || specifiedField === "fail" ||
+		if (!(specifiedField === "avg" || specifiedField === "pass" || specifiedField === "fail" ||
 			specifiedField === "audit" || specifiedField === "year" || specifiedField === "dept" ||
 			specifiedField === "id" || specifiedField === "instructor" ||
 			specifiedField === "title" || specifiedField === "uuid")) {
@@ -262,17 +262,17 @@ export class IPerformQuery {
 			}
 			this.setOriginalDatasetAndCheckDataset(orderField);
 			// Sort
-			finalResults =  this.insertionSort(orderField, results);
+			finalResults = this.insertionSort(orderField, results);
 		}
 		return finalResults;
 	}
 
-	public insertionSort(orderField: string,  results: InsightResult[]): InsightResult[] {
-		for(let i = 1; i < results.length; i++){
+	public insertionSort(orderField: string, results: InsightResult[]): InsightResult[] {
+		for (let i = 1; i < results.length; i++) {
 			let currentResultElement = results[i];
 			let currentVariable = currentResultElement[orderField];
 			let comparisonIndex = i - 1;
-			while(comparisonIndex >= 0 && results[comparisonIndex][orderField] > currentVariable){
+			while (comparisonIndex >= 0 && results[comparisonIndex][orderField] > currentVariable) {
 				results[comparisonIndex + 1] = results[comparisonIndex];
 				comparisonIndex = comparisonIndex - 1;
 			}

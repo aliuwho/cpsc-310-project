@@ -1,7 +1,7 @@
-import {ISection} from "./ISection";
 import {InsightDataset} from "../IInsightFacade";
+import {IKind} from "./IKind";
 
 export interface IElement {
-	sections: ISection[];
+	kinds: IKind[];
 	info: InsightDataset;
 }

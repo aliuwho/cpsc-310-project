@@ -1,10 +1,10 @@
-import {ISection} from "../interface/ISection";
 import fs from "fs";
 import {IElement} from "../interface/IElement";
 import {InsightDataset} from "../IInsightFacade";
+import {IKind} from "../interface/IKind";
 
 // Writes course sections to a JSON file
-export async function writeCourseSections(courseSections: ISection[], filePath: string): Promise<void> {
+export async function writeCourseSections(courseSections: IKind[], filePath: string): Promise<void> {
 	await fs.writeFile(filePath, JSON.stringify(courseSections), () => 0);
 	return Promise.resolve();
 }

@@ -349,8 +349,11 @@ describe("InsightFacade", function () {
 			// Will *fail* if there is a problem reading ANY dataset.
 			const loadDatasetPromises = [
 				insightFacade.addDataset("courses", getContentFromArchives("courses.zip"), InsightDatasetKind.Courses),
-				insightFacade.addDataset("courses-2",
-					getContentFromArchives("ten-courses.zip"), InsightDatasetKind.Courses)
+				insightFacade.addDataset(
+					"courses-2",
+					getContentFromArchives("ten-courses.zip"),
+					InsightDatasetKind.Courses
+				),
 			];
 
 			return Promise.all(loadDatasetPromises);
@@ -377,7 +380,7 @@ describe("InsightFacade", function () {
 						expect(actual).to.be.instanceof(InsightError);
 					}
 				},
-				assertOnResult(actual, expected){
+				assertOnResult(actual, expected) {
 					expect(actual).to.have.deep.members(expected);
 					expect(actual).to.be.same.length(expected.length);
 				},

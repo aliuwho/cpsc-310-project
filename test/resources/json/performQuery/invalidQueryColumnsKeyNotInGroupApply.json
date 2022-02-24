@@ -1,0 +1,26 @@
+{
+	"title": "query where COLUMNS does not strictly correspond to group and apply throws an InsightError",
+	"input": {
+		"WHERE": {},
+		"OPTIONS": {
+			"COLUMNS": [
+				"courses_pass"
+			]
+		},
+		"TRANSFORMATIONS": {
+			"GROUP": [
+				"courses_title"
+			],
+			"APPLY": [
+				{
+					"overallAvg": {
+						"AVG": "courses_avg"
+					}
+				}
+			]
+		}
+	},
+	"errorExpected": true,
+	"verbose": false,
+	"expected": "InsightError"
+}

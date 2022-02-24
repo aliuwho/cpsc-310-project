@@ -1,0 +1,16 @@
+{
+  "title": "query with empty transformations throws InsightError",
+  "input": {
+	  "WHERE": {},
+	  "OPTIONS": {
+		  "COLUMNS": [
+			  "courses_title"
+		  ]
+	  },
+	  "TRANSFORMATIONS": {
+	  }
+  },
+  "errorExpected": true,
+  "verbose": false,
+  "expected": "InsightError"
+}
