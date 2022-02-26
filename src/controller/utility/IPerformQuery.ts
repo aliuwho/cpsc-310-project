@@ -1,6 +1,7 @@
 import {InsightError, InsightResult} from "../IInsightFacade";
 import {IElement} from "../interface/IElement";
 import {IKind} from "../interface/IKind";
+import {isValidSField} from "./ISCompUtility";
 
 export class IPerformQuery {
 	protected unchangedSections: IKind[];
@@ -113,27 +114,24 @@ export class IPerformQuery {
 			// Reject if SComparison value is not a string
 			throw new InsightError("SComparison Value is not a string");
 		}
-		let resultArray = [];
-		if (filterValue === "*") {
-			resultArray = this.unchangedSections;
-		} else {
-			if (filterValue.substring(1, filterValue.length - 1).includes("*")) {
-				throw new InsightError("Asterisks (*) can only be the first or last characters of input strings");
-			}
 
-			resultArray = this.unchangedSections.filter((section: any) => {
-				return this.sCompFilterValueMatching(filterValue, section, specificFieldKey);
-			});
+		if (!isValidSField(filterValue)) {
+			throw new InsightError("Asterisks (*) can only appear as the first or last characters of input strings");
 		}
-		return resultArray;
+
+		return this.unchangedSections.filter((section: any) => {
+			return this.sCompFilterValueMatching(filterValue, section, specificFieldKey);
+		});
 	}
 
 	public sCompFilterValueMatching(filterValue: string, section: any, specificFieldKey: string) {
-		if (filterValue.charAt(0) === "*" && filterValue.charAt(filterValue.length - 1) === "*") {
+		if (filterValue === "*") {
+			return true;
+		} else if (filterValue.startsWith("*") && filterValue.endsWith("*")) {
 			return section[specificFieldKey].includes(filterValue.substring(1, filterValue.length - 1));
-		} else if (filterValue.charAt(0) === "*") {
-			return section[specificFieldKey].endsWith(filterValue.substring(1, filterValue.length));
-		} else if (filterValue.charAt(filterValue.length - 1) === "*") {
+		} else if (filterValue.startsWith("*")) {
+			return section[specificFieldKey].endsWith(filterValue.substring(1));
+		} else if (filterValue.endsWith("*")) {
 			return section[specificFieldKey].startsWith(filterValue.substring(0, filterValue.length - 1));
 		} else {
 			return section[specificFieldKey] === filterValue;
