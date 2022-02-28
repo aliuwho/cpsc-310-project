@@ -1,6 +1,6 @@
 import {InsightError, InsightResult} from "../IInsightFacade";
 import {IElement} from "../interface/IElement";
-import {IKind} from "../interface/IKind";
+import {IKind, ISection} from "../interface/IKind";
 
 export class IPerformQuery {
 	protected unchangedSections: IKind[];
@@ -250,6 +250,17 @@ export class IPerformQuery {
 			// Reject if Key does not exist in Section
 			throw new InsightError("Invalid key " + specifiedField + " in COLUMNS");
 		}
+	}
+
+	public createFieldInResultElementToBeAdded(columnName: any, resultElementToBeAdded: any, section: IKind): any {
+		const splitKey = columnName.split("_");
+		const specifiedDatasetName = splitKey[0];
+		this.checkIfMultipleDatasets(specifiedDatasetName);
+		const specifiedField = splitKey[1];
+		this.checkIfKeyExistsInSection(specifiedField);
+		// Add field into resultElementToBeAdded object
+		resultElementToBeAdded[columnName] = (section as ISection)[specifiedField as keyof ISection];
+		return resultElementToBeAdded;
 	}
 
 	public orderFunction(orderField: string, columnArray: any, results: InsightResult[]): InsightResult[] {

@@ -14,7 +14,7 @@ import {IElement} from "./interface/IElement";
 import {getDatasets, getKeys} from "./utility/IUtility";
 import {parseAndWriteJsonFile} from "./utility/IParse";
 import {IPerformQuery} from "./utility/IPerformQuery";
-import {IKind, ISection} from "./interface/IKind";
+import {IKind} from "./interface/IKind";
 
 /**
  * This is the main programmatic entry point for the project.
@@ -57,47 +57,96 @@ export default class InsightFacade implements IInsightFacade {
 		} else if (id.search("[^\\t\\r\\n\\v\\f ]+") > -1) {
 			const datasetPath = "./data/" + id;
 
-			// create directory for this dataset's json files
-			fs.mkdirSync(datasetPath + "/courses", {recursive: true});
-
 			// parse zip contents and write to disk and memory
 			let jsZip = new JSZip();
 			const loadedZip = await jsZip.loadAsync(content, {base64: true});
-			let folderZip = loadedZip.folder("courses");
-			if (folderZip != null) {
-				// parse the files in the zip under the courses directory
-				let promisedSections: any[] = [];
-				folderZip.forEach(function (relativePath, file) {
-					let sections = parseAndWriteJsonFile(file, datasetPath + "/courses/" + relativePath + ".json");
-					promisedSections = promisedSections.concat(sections);
-				});
-				// process promised sections into disk and memory
-				return Promise.all(promisedSections).then((awaitedSections) => {
-					awaitedSections = awaitedSections.reduce((accumulator, value) => accumulator.concat(value), []);
-					if (awaitedSections.length === 0) {
-						fse.removeSync(datasetPath); // remove the dir we created
-						const error = new InsightError("The dataset did not contain any valid sections");
-						return Promise.reject(error);
-					} else {
-						this.datasets.set(id, {
-							kinds: awaitedSections,
-							info: {
-								id: id,
-								kind: InsightDatasetKind.Courses,
-								numRows: awaitedSections.length,
-							},
-						});
-						// grab keys and return
-						let keys = getKeys(this.datasets);
-						return Promise.resolve<string[]>(keys);
-					}
-				});
+
+			if (loadedZip.folder(/courses/).length > 0) {
+				return this.addCourseDataset(datasetPath, loadedZip, id);
+			} else if (loadedZip.folder(/rooms/).length > 0) {
+				return this.addRoomDataset(datasetPath, loadedZip, id);
 			} else {
 				return Promise.reject(new InsightError("The dataset did not contain a courses folder"));
 			}
 		} else {
 			return Promise.reject(new InsightError("The dataset contained only whitespace"));
 		}
+	}
+
+	private addRoomDataset(datasetPath: string, loadedZip: JSZip, id: string): Promise<string[]> {
+		// create directory for this dataset's json files
+		fs.mkdirSync(datasetPath + "/rooms", {recursive: true});
+
+		// Access the files
+		let folderZip = loadedZip.folder("rooms");
+		let indexHtm = folderZip?.file("index.htm");
+
+		// Rejects if index.htm does not exist
+		if (indexHtm === null) {
+			throw new InsightError("index.htm file does not exist");
+		}
+
+		// parse the files in the zip under the courses directory
+		let promisedSections: any[] = [];
+		// folderZip?.forEach(function (relativePath, file) {
+		// 	let sections = parseAndWriteJsonFile(file, datasetPath + "/courses/" + relativePath + ".json");
+		// 	promisedSections = promisedSections.concat(sections);
+		// });
+		// process promised sections into disk and memory
+		return Promise.all(promisedSections).then((awaitedSections) => {
+			awaitedSections = awaitedSections.reduce((accumulator, value) => accumulator.concat(value), []);
+			if (awaitedSections.length === 0) {
+				fse.removeSync(datasetPath); // remove the dir we created
+				const error = new InsightError("The dataset did not contain any valid sections");
+				return Promise.reject(error);
+			} else {
+				this.datasets.set(id, {
+					kinds: awaitedSections,
+					info: {
+						id: id,
+						kind: InsightDatasetKind.Rooms,
+						numRows: awaitedSections.length,
+					},
+				});
+				// grab keys and return
+				let keys = getKeys(this.datasets);
+				return Promise.resolve<string[]>(keys);
+			}
+		});
+	}
+
+	private addCourseDataset(datasetPath: string, loadedZip: JSZip, id: string): Promise<string[]> {
+		// create directory for this dataset's json files
+		fs.mkdirSync(datasetPath + "/courses", {recursive: true});
+		let folderZip = loadedZip.folder("courses");
+
+		// parse the files in the zip under the courses directory
+		let promisedSections: any[] = [];
+		folderZip?.forEach(function (relativePath, file) {
+			let sections = parseAndWriteJsonFile(file, datasetPath + "/courses/" + relativePath + ".json");
+			promisedSections = promisedSections.concat(sections);
+		});
+		// process promised sections into disk and memory
+		return Promise.all(promisedSections).then((awaitedSections) => {
+			awaitedSections = awaitedSections.reduce((accumulator, value) => accumulator.concat(value), []);
+			if (awaitedSections.length === 0) {
+				fse.removeSync(datasetPath); // remove the dir we created
+				const error = new InsightError("The dataset did not contain any valid sections");
+				return Promise.reject(error);
+			} else {
+				this.datasets.set(id, {
+					kinds: awaitedSections,
+					info: {
+						id: id,
+						kind: InsightDatasetKind.Courses,
+						numRows: awaitedSections.length,
+					},
+				});
+				// grab keys and return
+				let keys = getKeys(this.datasets);
+				return Promise.resolve<string[]>(keys);
+			}
+		});
 	}
 
 	public removeDataset(id: string): Promise<string> {
@@ -160,8 +209,8 @@ export default class InsightFacade implements IInsightFacade {
 				// Go through every filteredSection to select specified values
 				let resultElementToBeAdded: any = {};
 				for (let columnName of columnArray) {
-					resultElementToBeAdded = this.createFieldInResultElementToBeAdded(columnName,
-						performQueryTemp, resultElementToBeAdded, section);
+					resultElementToBeAdded = performQueryTemp.createFieldInResultElementToBeAdded(columnName,
+						resultElementToBeAdded, section);
 				}
 				// Add resultElementToBeAdded into results array
 				results.push(resultElementToBeAdded);
@@ -174,19 +223,8 @@ export default class InsightFacade implements IInsightFacade {
 		});
 	}
 
-	private createFieldInResultElementToBeAdded(columnName: any, performQueryTemp: IPerformQuery,
-		resultElementToBeAdded: any, section: IKind): any {
-		const splitKey = columnName.split("_");
-		const specifiedDatasetName = splitKey[0];
-		performQueryTemp.checkIfMultipleDatasets(specifiedDatasetName);
-		const specifiedField = splitKey[1];
-		performQueryTemp.checkIfKeyExistsInSection(specifiedField);
-		// Add field into resultElementToBeAdded object
-		resultElementToBeAdded[columnName] = (section as ISection)[specifiedField as keyof ISection];
-		return resultElementToBeAdded;
-	}
-
 	public listDatasets(): Promise<InsightDataset[]> {
 		return Promise.resolve(getDatasets(this.datasets));
 	}
 }
+
