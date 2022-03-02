@@ -2,6 +2,7 @@ import fs from "fs";
 import {IElement} from "../interface/IElement";
 import {InsightDataset} from "../IInsightFacade";
 import {IKind} from "../interface/IKind";
+import {IPerformQuery} from "./IPerformQuery";
 
 // Writes course sections to a JSON file
 export async function writeCourseSections(courseSections: IKind[], filePath: string): Promise<void> {
@@ -27,7 +28,12 @@ export function getDatasets(datasets: Map<string, IElement>): InsightDataset[] {
 	return ret;
 }
 
-// Returns true if an array is not empty
-export function notEmpty(arr: any[]): boolean {
-	return arr.length > 0;
+// TODO check that this function hasn't been broken
+export function createFieldInResultElementToBeAdded(columnName: any, performQueryTemp: IPerformQuery,
+	resultElementToBeAdded: any, item: IKind): any {
+	const splitKey = columnName.split("_");
+	const specifiedField = splitKey[1];
+	// Add field into resultElementToBeAdded object
+	resultElementToBeAdded[columnName] = (item as IKind)[specifiedField as keyof IKind];
+	return resultElementToBeAdded;
 }

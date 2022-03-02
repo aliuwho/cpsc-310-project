@@ -11,10 +11,12 @@ import * as fs from "fs";
 import * as fse from "fs-extra";
 import JSZip from "jszip";
 import {IElement} from "./interface/IElement";
-import {getDatasets, getKeys} from "./utility/IUtility";
+import {createFieldInResultElementToBeAdded, getDatasets, getKeys} from "./utility/IUtility";
 import {parseAndWriteJsonFile} from "./utility/IParse";
 import {IPerformQuery} from "./utility/IPerformQuery";
-import {IKind, ISection} from "./interface/IKind";
+import {IKind} from "./interface/IKind";
+import {hasUnderscore, nonWhitespace} from "./utility/IValidate";
+import {IQueryValidator} from "./utility/IQueryValidator";
 
 /**
  * This is the main programmatic entry point for the project.
@@ -52,9 +54,9 @@ export default class InsightFacade implements IInsightFacade {
 	public async addDataset(id: string, content: string, kind: InsightDatasetKind): Promise<string[]> {
 		if (this.datasets.has(id)) {
 			return Promise.reject(new InsightError("The dataset already exists"));
-		} else if (id.search("_+") > -1) {
+		} else if (hasUnderscore(id)) {
 			return Promise.reject(new InsightError("The dataset contained underscore(s)"));
-		} else if (id.search("[^\\t\\r\\n\\v\\f ]+") > -1) {
+		} else if (nonWhitespace(id)) {
 			const datasetPath = "./data/" + id;
 
 			// create directory for this dataset's json files
@@ -101,9 +103,9 @@ export default class InsightFacade implements IInsightFacade {
 	}
 
 	public removeDataset(id: string): Promise<string> {
-		if (id.search("_+") > -1) {
+		if (hasUnderscore(id)) {
 			return Promise.reject(new InsightError("The dataset contained underscore(s)"));
-		} else if (id.search("[^\\t\\r\\n\\v\\f ]+") > -1) {
+		} else if (nonWhitespace(id)) {
 			if (this.datasets.delete(id)) {
 				return Promise.resolve(id);
 			} else {
@@ -115,7 +117,6 @@ export default class InsightFacade implements IInsightFacade {
 	}
 
 	public performQuery(query: unknown): Promise<InsightResult[]> {
-		let performQueryTemp = new IPerformQuery(this.datasets);
 		let results: InsightResult[] = [];
 		return new Promise((resolve, reject) => {
 			if (!(query instanceof Object)) {
@@ -123,67 +124,42 @@ export default class InsightFacade implements IInsightFacade {
 				throw new InsightError("Invalid query string: Invalid JSON");
 			}
 			const tempQuery: any = query; // to have access to the keys
-
-			if (!(tempQuery["WHERE"])) {
-				// Reject if no WHERE block
-				throw new InsightError("Missing WHERE");
+			let validator = new IQueryValidator(tempQuery);
+			let columnArray = validator.columnsBlock;
+			let orderKeys = validator.orderKeys;
+			let dataset = this.datasets.get(validator.getDatasetName());
+			if (!dataset) {
+				throw new InsightError("Referenced dataset " + validator.getDatasetName() + " not added yet ");
 			}
 
-			if (!(tempQuery["OPTIONS"])) {
-				// Reject if no OPTIONS block
-				throw new InsightError("Missing OPTIONS");
-			}
+			let iPerformQuery = new IPerformQuery(dataset.kinds); // TODO consider changing constructor for iPerformQuery
 
-			const whereBlock = tempQuery["WHERE"];
-			const optionBlock = tempQuery["OPTIONS"];
-			let filteredSections: IKind[] = [];
+			let whereBlock = tempQuery["WHERE"];
+			let filteredSections: IKind[];
 			// WHERE block manipulation
-			if (Object.keys(whereBlock).length > 0) {
-				performQueryTemp.checkObjectLength(whereBlock, "WHERE");
-				filteredSections = performQueryTemp.mainWhereFilter(whereBlock);
-			}
-			// OPTIONS block manipulation
-			if (!(optionBlock["COLUMNS"])) {
-				// Reject if no COLUMNS block
-				throw new InsightError("OPTIONS missing COLUMNS");
-			}
-			const columnArray = optionBlock["COLUMNS"];
-			const orderField = optionBlock["ORDER"];
-			if (columnArray.length <= 0 || !(Array.isArray(columnArray))) {
-				// Reject if no COLUMN array is empty
-				throw new InsightError("COLUMNS must be a non-empty array");
-			}
 			// Check if WHERE block has filters, if not return the whole section array in the specified ZIP
-			filteredSections = performQueryTemp.checkIfWhereBlockHasFiltered(filteredSections, columnArray[0]);
+			if (Object.keys(whereBlock).length > 0) {
+				filteredSections = iPerformQuery.mainWhereFilter(whereBlock);
+			} else {
+				filteredSections = dataset.kinds;
+			}
 
 			for (let section of filteredSections) {
 				// Go through every filteredSection to select specified values
 				let resultElementToBeAdded: any = {};
 				for (let columnName of columnArray) {
-					resultElementToBeAdded = this.createFieldInResultElementToBeAdded(columnName,
-						performQueryTemp, resultElementToBeAdded, section);
-				}
+					resultElementToBeAdded = createFieldInResultElementToBeAdded(columnName,
+						iPerformQuery, resultElementToBeAdded, section);
+				} // TODO check this works
 				// Add resultElementToBeAdded into results array
 				results.push(resultElementToBeAdded);
+				if (results.length > 5000) {
+					return reject(new ResultTooLargeError("The result is too big (>5000 results)"));
+				}
 			}
-			if (results.length > 5000) {
-				return reject(new ResultTooLargeError("The result is too big (>5000 results)"));
-			}
-			results = performQueryTemp.orderFunction(orderField, columnArray, results);
+			results = iPerformQuery.orderFunction(orderKeys, columnArray, results);
 			resolve(results);
 		});
-	}
-
-	private createFieldInResultElementToBeAdded(columnName: any, performQueryTemp: IPerformQuery,
-		resultElementToBeAdded: any, section: IKind): any {
-		const splitKey = columnName.split("_");
-		const specifiedDatasetName = splitKey[0];
-		performQueryTemp.checkIfMultipleDatasets(specifiedDatasetName);
-		const specifiedField = splitKey[1];
-		performQueryTemp.checkIfKeyExistsInSection(specifiedField);
-		// Add field into resultElementToBeAdded object
-		resultElementToBeAdded[columnName] = (section as ISection)[specifiedField as keyof ISection];
-		return resultElementToBeAdded;
 	}
 
 	public listDatasets(): Promise<InsightDataset[]> {
