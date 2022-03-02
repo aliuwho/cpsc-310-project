@@ -1,0 +1,18 @@
+{
+	"title": "query that references multiple types throws InsightError",
+	"input": {
+		"WHERE": {
+			"IS": {
+				"rooms_dept": "atsc"
+			}
+		},
+		"OPTIONS": {
+			"COLUMNS": [
+				"rooms_dept"
+			]
+		}
+	},
+	"errorExpected": true,
+	"verbose": false,
+	"expected": "InsightError"
+}
