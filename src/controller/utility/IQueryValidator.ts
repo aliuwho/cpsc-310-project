@@ -5,13 +5,13 @@ import {
 	checkExists,
 	checkField,
 	checkKind,
-	checkLength,
 	checkNonEmptyArray,
+	checkObjectLength,
 	checkString,
 	checkSubset,
 	checkValidApplyRule,
 	checkValidMCompArg,
-	checkValidSCompArg,
+	checkValidSCompArg, Direction,
 	hasUnderscore,
 	isCoursesField,
 	isRoomsField,
@@ -22,10 +22,10 @@ import {
 export class IQueryValidator {
 	private datasetName: string = "";
 	private datasetKind: string = "";
-	public readonly validKeys: string[];
-	public readonly columnsBlock: any;
-	public readonly orderKeys: string[];
-	private dir: string;
+	private readonly validKeys: string[];
+	private readonly columnsArray: any;
+	private readonly orderKeys: string[];
+	private dir: string = Direction.UP;  	// Default to ascending order
 
 	// Constructs a performQuery object
 	constructor(query: any) {
@@ -43,9 +43,8 @@ export class IQueryValidator {
 
 		// Check COLUMNS, and check ORDER if it exists
 		this.orderKeys = [];
-		this.dir = "";
-		this.columnsBlock = optionsBlock["COLUMNS"];
-		this.checkColumnsBlock();
+		this.columnsArray = optionsBlock["COLUMNS"];
+		this.checkColumnsArray();
 		const orderBlock = optionsBlock["ORDER"];
 		if (orderBlock) {
 			this.orderKeys = this.extractOrderKeys(orderBlock);
@@ -57,11 +56,11 @@ export class IQueryValidator {
 		checkExists(whereBlock, "WHERE");
 		try {
 			// Check if WHERE is empty
-			checkLength(whereBlock, 0, "WHERE");
+			checkObjectLength(whereBlock, 0, "WHERE");
 		} catch (error) {
 			if (error instanceof InsightError) {
 				// WHERE should only have 1 arg
-				checkLength(whereBlock, 1, "WHERE");
+				checkObjectLength(whereBlock, 1, "WHERE");
 				this.checkFilterBlock(whereBlock);
 			} else {
 				throw error;
@@ -72,7 +71,7 @@ export class IQueryValidator {
 	private checkFilterBlock(block: any): void {
 		if (block["OR"] || block["AND"]) {
 			// Logic comparison
-			checkLength(block, 1, "AND/OR");
+			checkObjectLength(block, 1, "AND/OR");
 			let filterKey = Object.keys(block)[0];
 			let filters = block[filterKey];
 			checkNonEmptyArray(filters, "AND/OR args");
@@ -81,19 +80,19 @@ export class IQueryValidator {
 			});
 		} else if (block["LT"] || block["EQ"] || block["GT"]) {
 			// M Comparison
-			checkLength(block, 1, "LT/GT/EQ");
+			checkObjectLength(block, 1, "LT/GT/EQ");
 			let filterKey = Object.keys(block)[0];
 			let mCompObj = block[filterKey];
-			checkLength(mCompObj, 1, "MCOMP");
+			checkObjectLength(mCompObj, 1, "MCOMP");
 			let mKey = Object.keys(mCompObj)[0];
 			this.checkValidKey(mKey, KeyType.M_KEY);
 			let mCompArg = mCompObj[mKey];
 			checkValidMCompArg(mCompArg);
 		} else if (block["IS"]) {
 			// S Comparison
-			checkLength(block, 1, "IS");
+			checkObjectLength(block, 1, "IS");
 			let sCompObj = block["IS"];
-			checkLength(sCompObj, 1, "SCOMP");
+			checkObjectLength(sCompObj, 1, "SCOMP");
 			let sKey = Object.keys(sCompObj)[0];
 			this.checkValidKey(sKey, KeyType.S_KEY);
 			let sCompArg = sCompObj[sKey];
@@ -101,7 +100,7 @@ export class IQueryValidator {
 		} else if (block["NOT"]) {
 			// Negation
 			const negBlock = block["NOT"];
-			checkLength(negBlock, 1, "NOT");
+			checkObjectLength(negBlock, 1, "NOT");
 			this.checkFilterBlock(negBlock); // Recurse on nested filter
 		} else {
 			// Reject if invalid key
@@ -120,13 +119,13 @@ export class IQueryValidator {
 
 	// Checks if COLUMNS block is correctly formatted and matches valid keys when valid keys is non-empty.
 	// If not, throws InsightError.
-	private checkColumnsBlock(): void {
-		checkExists(this.columnsBlock, "COLUMNS");
-		checkNonEmptyArray(this.columnsBlock, "COLUMNS");
+	private checkColumnsArray(): void {
+		checkExists(this.columnsArray, "COLUMNS");
+		checkNonEmptyArray(this.columnsArray, "COLUMNS");
 		if (this.validKeys.length > 0) {
-			checkSubset(this.columnsBlock, this.validKeys, "COLUMNS", "GROUP/APPLY");
+			checkSubset(this.columnsArray, this.validKeys, "COLUMNS", "GROUP/APPLY");
 		} else {
-			this.columnsBlock.forEach((columnKey: any) => {
+			this.columnsArray.forEach((columnKey: any) => {
 				this.checkValidKey(columnKey, KeyType.KEY);
 			});
 		}
@@ -138,7 +137,7 @@ export class IQueryValidator {
 			this.checkValidKey(orderBlock, KeyType.ANY_KEY);
 		} else {
 			// Case where order has 2 args
-			checkLength(orderBlock, 2, "ORDER");
+			checkObjectLength(orderBlock, 2, "ORDER");
 
 			// Check that dir block is correct
 			checkDir(orderBlock["dir"]);
@@ -176,7 +175,7 @@ export class IQueryValidator {
 
 	// Checks that a TRANSFORMATIONS block is valid and returns key(s). If not, throws an InsightError.
 	private extractValidKeys(transformBlock: any): string[] {
-		checkLength(transformBlock, 2, "TRANSFORM");
+		checkObjectLength(transformBlock, 2, "TRANSFORM");
 		const groupBlock = transformBlock["GROUP"];
 		this.checkGroupBlock(groupBlock);
 		let groupAndApplyKeys: string[] = [];
@@ -194,7 +193,7 @@ export class IQueryValidator {
 		} else {
 			orderKeys = orderBlock["keys"];
 		}
-		checkSubset(orderKeys, this.columnsBlock, "ORDER", "COLUMNS");
+		checkSubset(orderKeys, this.columnsArray, "ORDER", "COLUMNS");
 		return orderKeys;
 
 	}
@@ -204,7 +203,7 @@ export class IQueryValidator {
 		checkString(key, "Key");
 		if (keyType === KeyType.KEY || keyType === KeyType.M_KEY || keyType === KeyType.S_KEY) {
 			const splitKey = key.split("_");
-			checkLength(splitKey, 2, "Key");
+			checkObjectLength(splitKey, 2, "Key");
 
 			// Dataset check
 			const specifiedDatasetName = splitKey[0];
@@ -273,11 +272,15 @@ export class IQueryValidator {
 		return this.datasetName;
 	}
 
-	public getDatasetKind(): string {
-		return this.datasetKind;
-	}
-
 	public getDir(): string {
 		return this.dir;
+	}
+
+	public getOrderKeys(): string[] {
+		return this.orderKeys;
+	}
+
+	public getColumnsArray(): string[] {
+		return this.columnsArray;
 	}
 }

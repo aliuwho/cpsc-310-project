@@ -1,31 +1,49 @@
-import {InsightError, InsightResult} from "../IInsightFacade";
+import {InsightError, InsightResult, ResultTooLargeError} from "../IInsightFacade";
 import {IKind} from "../interface/IKind";
+import {Direction} from "./IValidate";
 
+// Class to extract InsightResults from a valid query
 export class IPerformQuery {
 	protected unchangedKinds: IKind[];
+	protected insightResults: InsightResult[];
 
-	// Constructs a performQuery object
-	constructor(kinds: IKind[]) {
+	constructor(kinds: IKind[], query: any, columnsArray: string[], orderKeys: string[], dir: string) {
+		// Check if query is valid and initialize fields
 		this.unchangedKinds = kinds;
+		let filteredKinds: IKind[] = this.mainWhereFilter(query["WHERE"]);
+		if (filteredKinds.length > 5000) {
+			throw new ResultTooLargeError("The result is too big (>5000 results)");
+		}
+		let unorderedResults = this.createResultsWithSpecifiedFields(filteredKinds, columnsArray);
+		this.insightResults = this.orderResults(unorderedResults, orderKeys, dir);
+
 	}
 
-	public mainWhereFilter(filterBlock: any): IKind[] {
+	public getInsightResults(): InsightResult[] {
+		return this.insightResults;
+	}
+
+	private mainWhereFilter(filterBlock: any): IKind[] {
+		if (Object.keys(filterBlock).length === 0) {
+			// Empty WHERE block
+			return this.unchangedKinds;
+		}
 		let finalResult: IKind[] = [];
 		if (filterBlock["OR"] || filterBlock["AND"]) {
 			let collatedResultArray: IKind[][] = [];
 			if (filterBlock["OR"]) {
 				const orBlock = filterBlock["OR"];
 				for (let filter of orBlock) {
-					let filteredSectionArray = this.mainWhereFilter(filter);
-					collatedResultArray.push(filteredSectionArray);
+					let filteredArray = this.mainWhereFilter(filter);
+					collatedResultArray.push(filteredArray);
 				}
 				finalResult = this.filterOr(collatedResultArray);
 
 			} else {
 				const andBlock = filterBlock["AND"];
 				for (let filter of andBlock) {
-					let filteredSectionArray = this.mainWhereFilter(filter);
-					collatedResultArray.push(filteredSectionArray);
+					let filteredArray = this.mainWhereFilter(filter);
+					collatedResultArray.push(filteredArray);
 				}
 				finalResult = this.filterAnd(collatedResultArray);
 			}
@@ -39,18 +57,18 @@ export class IPerformQuery {
 		} else if (filterBlock["NOT"]) {
 			// Negation
 			const negBlock = filterBlock["NOT"];
-			let toBeExcludedSectionArray: IKind[];
-			toBeExcludedSectionArray = this.mainWhereFilter(negBlock);
-			// Remove the originally filtered sections in NegBlock content (for negation):
+			let toBeExcludedArray: IKind[];
+			toBeExcludedArray = this.mainWhereFilter(negBlock);
+			// Remove the originally filtered kinds in NegBlock content (for negation):
 			// https://stackoverflow.com/questions/19957348/remove-all-elements-contained-in-another-array
-			finalResult = this.unchangedKinds.filter((section) => {
-				return !toBeExcludedSectionArray.includes(section);
+			finalResult = this.unchangedKinds.filter((kind) => {
+				return !toBeExcludedArray.includes(kind);
 			});
 		}
 		return finalResult;
 	}
 
-	public filterOr(collatedResultArray: IKind[][]): IKind[] {
+	private filterOr(collatedResultArray: IKind[][]): IKind[] {
 		let finalArray: IKind[] = [];
 		for (let currentArray of collatedResultArray) {
 			finalArray = finalArray.concat(currentArray);
@@ -65,17 +83,17 @@ export class IPerformQuery {
 		return finalArray;
 	}
 
-	public filterAnd(collatedResultArray: IKind[][]): IKind[] {
+	private filterAnd(collatedResultArray: IKind[][]): IKind[] {
 		let finalArray = collatedResultArray[0];
 		for (let i = 1; i < collatedResultArray.length; i++) {
-			finalArray = finalArray.filter((section) => {
-				return collatedResultArray[i].includes(section);
+			finalArray = finalArray.filter((kind) => {
+				return collatedResultArray[i].includes(kind);
 			});
 		}
 		return finalArray;
 	}
 
-	public sComparison(filterBlock: any): IKind[] {
+	private sComparison(filterBlock: any): IKind[] {
 		const sComBlock = filterBlock["IS"];
 		// Getting individual values
 		const filterKey = Object.keys(sComBlock);
@@ -83,26 +101,27 @@ export class IPerformQuery {
 		const splitKey = filterKeyString.split("_");
 		const specificFieldKey = splitKey[1]; // one out of nine field keys
 		const filterValue = sComBlock[filterKeyString]; // field value
-		return this.unchangedKinds.filter((section: any) => {
-			return this.sCompFilterValueMatching(filterValue, section, specificFieldKey);
+		return this.unchangedKinds.filter((kind: any) => {
+			return this.sCompFilterValueMatching(filterValue, kind, specificFieldKey);
 		});
 	}
 
-	public sCompFilterValueMatching(filterValue: string, section: any, specificFieldKey: string) {
+	// Returns true if a kind's specified value matches a filter value
+	private sCompFilterValueMatching(filterValue: string, kind: any, specificFieldKey: string): boolean {
 		if (filterValue === "*") {
 			return true;
 		} else if (filterValue.startsWith("*") && filterValue.endsWith("*")) {
-			return section[specificFieldKey].includes(filterValue.substring(1, filterValue.length - 1));
+			return kind[specificFieldKey].includes(filterValue.substring(1, filterValue.length - 1));
 		} else if (filterValue.startsWith("*")) {
-			return section[specificFieldKey].endsWith(filterValue.substring(1));
+			return kind[specificFieldKey].endsWith(filterValue.substring(1));
 		} else if (filterValue.endsWith("*")) {
-			return section[specificFieldKey].startsWith(filterValue.substring(0, filterValue.length - 1));
+			return kind[specificFieldKey].startsWith(filterValue.substring(0, filterValue.length - 1));
 		} else {
-			return section[specificFieldKey] === filterValue;
+			return kind[specificFieldKey] === filterValue;
 		}
 	}
 
-	public mComparison(filterBlock: any): IKind[] {
+	private mComparison(filterBlock: any): IKind[] {
 		let mComBlock: any;
 		if (filterBlock["LT"]) {
 			mComBlock = filterBlock["LT"];
@@ -120,17 +139,16 @@ export class IPerformQuery {
 		return this.mComparisonFilter(filterBlock, specificFieldKey, filterValue);
 	}
 
-	// TODO simplify?
-	public mComparisonFilter(filterBlock: any, specificFieldKey: string, filterValue: any) {
-		// New sectionArray
-		return this.unchangedKinds.filter((section: any) => {
-			if (specificFieldKey in section) {
+	private mComparisonFilter(filterBlock: any, specificFieldKey: string, filterValue: any) {
+		// New array
+		return this.unchangedKinds.filter((item: any) => {
+			if (specificFieldKey in item) {
 				if (filterBlock["LT"]) {
-					return section[specificFieldKey] < filterValue;
+					return item[specificFieldKey] < filterValue;
 				} else if (filterBlock["EQ"]) {
-					return section[specificFieldKey] === filterValue;
+					return item[specificFieldKey] === filterValue;
 				} else {
-					return section[specificFieldKey] > filterValue;
+					return item[specificFieldKey] > filterValue;
 				}
 			} else {
 				// Reject if key is invalid
@@ -139,34 +157,35 @@ export class IPerformQuery {
 		});
 	}
 
-	// TODO check this works
-	public checkIfWhereBlockHasFiltered(filteredSections: IKind[]): IKind[] {
-		if (filteredSections.length !== 0) {
-			// WHERE block has filters and produced at least 1 results
-			return filteredSections;
+	// Converts an IKind into an InsightResult with specified fields.
+	private createResultWithSpecifiedFields(item: IKind, specifiedFields: string[]): InsightResult {
+		let resultElement: InsightResult = {};
+		for (const columnName of specifiedFields) {
+			const splitKey = columnName.split("_");
+			const specifiedField = splitKey[1];
+			resultElement[columnName] = item[specifiedField as keyof IKind];
 		}
-		return this.unchangedKinds;
+		return resultElement;
 	}
 
-	// TODO use tuples to order
-	// TODO refactor for orderBlock
-	// TODO USE DIR
-	public orderFunction(orderKeys: string[], columnArray: any, results: InsightResult[]): InsightResult[] {		// Sort by order
-		let finalResults: InsightResult[] = results;
-		if (orderKeys.length > 0) {
-			// Sort
-			finalResults = this.insertionSort(orderKeys, results);
+	// Converts a list of IKinds into InsightResults with specified fields.
+	private createResultsWithSpecifiedFields(kinds: IKind[], specifiedFields: string[]): InsightResult[] {
+		let results: InsightResult[] = [];
+		for (const item of kinds) {
+			const resultElement = this.createResultWithSpecifiedFields(item, specifiedFields);
+			results.push(resultElement);
 		}
-		return finalResults;
+		return results;
 	}
 
-	public insertionSort(orderArray: string[], results: InsightResult[]): InsightResult[] {
-		let orderField = orderArray[0];
+	// Sort a list of InsightResults by a tuple (orderKeys) and direction using insertion sort
+	private orderResults(results: InsightResult[], orderKeys: string[], dir: string): InsightResult[] {		// Sort by order
 		for (let i = 1; i < results.length; i++) {
 			let currentResultElement = results[i];
-			let currentVariable = currentResultElement[orderField];
+			let currentVariable = currentResultElement;
 			let comparisonIndex = i - 1;
-			while (comparisonIndex >= 0 && results[comparisonIndex][orderField] > currentVariable) {
+			while (comparisonIndex >= 0 &&
+			this.compareResults(results[comparisonIndex], currentVariable, orderKeys, dir)) {
 				results[comparisonIndex + 1] = results[comparisonIndex];
 				comparisonIndex = comparisonIndex - 1;
 			}
@@ -174,4 +193,44 @@ export class IPerformQuery {
 		}
 		return results;
 	}
+
+	// Given a direction and orderKeys, returns:
+	// 	1	 if A comes before B
+	// 	0	 if A is tied with B
+	// -1	 if A comes after B
+	private compareResults(resultA: InsightResult, resultB: InsightResult, orderKeys: string[], dir: string): number {
+		if (orderKeys.length === 1) {
+			let key = orderKeys[0];
+			if (resultA[key] === resultB[key]) {
+				return 0;
+			}
+			switch (dir) {
+				case Direction.UP:
+					// A before B iff A < B
+					if (resultA[key] < resultB[key]) {
+						return 1;
+					} else {
+						return -1;
+					}
+				case Direction.DOWN:
+					// A before B iff A > B
+					if (resultA[key] > resultB[key]) {
+						return 1;
+					} else {
+						return -1;
+					}
+				default:
+					throw new InsightError("Invalid DIRECTION");
+			}
+		} else {
+			let firstKeyComparison = this.compareResults(resultA, resultB, [orderKeys[0]], dir);
+			if (firstKeyComparison !== 0) {
+				return this.compareResults(resultA, resultB, orderKeys.splice(1), dir);
+			} else {
+				return firstKeyComparison;
+			}
+		}
+
+	}
+
 }

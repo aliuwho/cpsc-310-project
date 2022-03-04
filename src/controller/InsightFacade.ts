@@ -5,17 +5,15 @@ import {
 	InsightError,
 	InsightResult,
 	NotFoundError,
-	ResultTooLargeError,
 } from "./IInsightFacade";
 import * as fs from "fs";
 import * as fse from "fs-extra";
 import JSZip from "jszip";
 import {IElement} from "./interface/IElement";
-import {createFieldInResultElementToBeAdded, getDatasets, getKeys} from "./utility/IUtility";
 import {parseAndWriteJsonFile} from "./utility/IParse";
 import {IPerformQuery} from "./utility/IPerformQuery";
-import {IKind} from "./interface/IKind";
 import {hasUnderscore, nonWhitespace} from "./utility/IValidate";
+import {getDatasets, getKeys} from "./utility/IUtility";
 import {IQueryValidator} from "./utility/IQueryValidator";
 
 /**
@@ -117,48 +115,24 @@ export default class InsightFacade implements IInsightFacade {
 	}
 
 	public performQuery(query: unknown): Promise<InsightResult[]> {
-		let results: InsightResult[] = [];
 		return new Promise((resolve, reject) => {
 			if (!(query instanceof Object)) {
 				// Reject if invalid type
-				throw new InsightError("Invalid query string: Invalid JSON");
+				reject(new InsightError("Invalid query string: Invalid JSON"));
 			}
+
+			// Validate query using IQueryValidator
 			const tempQuery: any = query; // to have access to the keys
 			let validator = new IQueryValidator(tempQuery);
-			let columnArray = validator.columnsBlock;
-			let orderKeys = validator.orderKeys;
 			let dataset = this.datasets.get(validator.getDatasetName());
 			if (!dataset) {
-				throw new InsightError("Referenced dataset " + validator.getDatasetName() + " not added yet ");
-			}
-
-			let iPerformQuery = new IPerformQuery(dataset.kinds); // TODO consider changing constructor for iPerformQuery
-
-			let whereBlock = tempQuery["WHERE"];
-			let filteredSections: IKind[];
-			// WHERE block manipulation
-			// Check if WHERE block has filters, if not return the whole section array in the specified ZIP
-			if (Object.keys(whereBlock).length > 0) {
-				filteredSections = iPerformQuery.mainWhereFilter(whereBlock);
+				reject(new InsightError("Referenced dataset " + validator.getDatasetName() + " not added yet "));
 			} else {
-				filteredSections = dataset.kinds;
+				// Get InsightResults using IPerformQuery
+				let iPerformQuery = new IPerformQuery(dataset.kinds, tempQuery,
+					validator.getColumnsArray(), validator.getOrderKeys(), validator.getDir());
+				resolve(iPerformQuery.getInsightResults());
 			}
-
-			for (let section of filteredSections) {
-				// Go through every filteredSection to select specified values
-				let resultElementToBeAdded: any = {};
-				for (let columnName of columnArray) {
-					resultElementToBeAdded = createFieldInResultElementToBeAdded(columnName,
-						iPerformQuery, resultElementToBeAdded, section);
-				} // TODO check this works
-				// Add resultElementToBeAdded into results array
-				results.push(resultElementToBeAdded);
-				if (results.length > 5000) {
-					return reject(new ResultTooLargeError("The result is too big (>5000 results)"));
-				}
-			}
-			results = iPerformQuery.orderFunction(orderKeys, columnArray, results);
-			resolve(results);
 		});
 	}
 

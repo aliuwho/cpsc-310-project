@@ -20,6 +20,11 @@ export enum KeyType {
 	APPLY_KEY = "APPLY KEY",
 }
 
+export enum Direction {
+	UP = "UP", 		// Represents ascending order
+	DOWN = "DOWN" 	// Represents descending order
+}
+
 // Throws InsightError if field is not a valid field for a keyType
 export function checkField(field: string, keyType: KeyType): void {
 	if (keyType === KeyType.M_KEY) {
@@ -60,12 +65,11 @@ export function nonWhitespace(str: string): boolean {
 	return (str.search("[^\\t\\r\\n\\v\\f ]+") > -1);
 }
 
-// Check that an object has the correct length.
-// Otherwise, throws InsightError using filterWord
-export function checkLength(obj: any, numArgs: number, filterWord: string): void {
+// Check that an object has the correct length. Otherwise, throws InsightError with object's name
+export function checkObjectLength(obj: any, len: number, name: string): void {
 	const objectLength = Object.keys(obj).length;
-	if (objectLength !== numArgs) {
-		throw new InsightError(filterWord + " should only have " + numArgs + " key(s), but has " + objectLength);
+	if (objectLength !== len) {
+		throw new InsightError(name + " should only have " + len + " key(s), but has " + objectLength);
 	}
 }
 
@@ -125,13 +129,16 @@ export function checkValidMCompArg(field: any): void {
 export function checkDir(dirBlock: any): void {
 	checkExists(dirBlock, "dir in ORDER");
 	checkString(dirBlock, "dir in ORDER");
-	if (dirBlock !== "UP" && dirBlock !== "DOWN") {
+	if (!Object.values(Direction).includes(dirBlock)) {
 		throw new InsightError("ORDER dir is not a valid string (must be one of 'UP' or 'DOWN')");
 	}
 }
 
 // Check that a field is consistent with an InsightDatasetKind. If not, throws InsightError
 export function checkKind(field: string, datasetKind: string) {
+	if (datasetKind !== InsightDatasetKind.Rooms && datasetKind !== InsightDatasetKind.Courses) {
+		throw new InsightError("Invalid dataset kind reference");
+	}
 	if (datasetKind === InsightDatasetKind.Courses && !isCoursesField(field)) {
 		// Reject if different dataset types are being referenced
 		throw new InsightError("Multiple dataset types cannot be referred");
@@ -151,7 +158,7 @@ export function checkDataset(datasetA: string, datasetB: string) {
 
 // Check if an applyObject is a valid applyRule. Otherwise, throws InsightError.
 export function checkValidApplyRule(applyObj: any, validator: IQueryValidator): void {
-	checkLength(applyObj, 1, "APPLY RULE");
+	checkObjectLength(applyObj, 1, "APPLY RULE");
 	let applyKey = Object.keys(applyObj)[0];
 	validator.checkValidKey(applyKey, KeyType.APPLY_KEY);
 	let applyRuleValue = applyObj[applyKey];
