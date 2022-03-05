@@ -10,6 +10,8 @@ import InsightFacade from "../../src/controller/InsightFacade";
 import {expect, use} from "chai";
 import {clearDisk, getContentFromArchives} from "../TestUtil";
 import {folderTest} from "@ubccpsc310/folder-test";
+// import {getKeys, writeCourseSections} from "../../src/controller/utility/IUtility";
+// import {parseFile, parseFileContent} from "../../src/controller/utility/IParse";
 import chaiAsPromised from "chai-as-promised";
 import {describe} from "mocha";
 
@@ -532,6 +534,7 @@ describe("InsightFacade", function () {
 					getContentFromArchives("ten-courses.zip"),
 					InsightDatasetKind.Courses
 				),
+				insightFacade.addDataset("rooms", rooms, InsightDatasetKind.Rooms)
 			];
 
 			return Promise.all(loadDatasetPromises);

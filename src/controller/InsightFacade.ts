@@ -11,11 +11,20 @@ import * as fs from "fs";
 import * as fse from "fs-extra";
 import JSZip from "jszip";
 import {IElement} from "./interface/IElement";
-import {getDatasets, getKeys, writeSectionsAndRooms} from "./utility/IUtility";
-import {parseAndWriteJsonFile, parseJsonToCourseSections} from "./utility/IParse";
 import {parseAndWriteHtmlFile} from "./utility/IRoomDataset";
+import {parseAndWriteJsonFile} from "./utility/IParse";
 import {IPerformQuery} from "./utility/IPerformQuery";
-import {IKind, IRoom, ISection} from "./interface/IKind";
+import {hasUnderscore, nonWhitespace, orderResults} from "./utility/IValidate";
+import {
+	applyRulesToGroup,
+	createGroupsFromKinds,
+	createResultsWithSpecifiedFields,
+	getDatasets,
+	getKeys,
+	selectFieldsFromResult,
+} from "./utility/IUtility";
+import {IQueryValidator} from "./utility/IQueryValidator";
+import {IKind, IRoom,} from "./interface/IKind";
 /**
  * This is the main programmatic entry point for the project.
  * Method documentation is in IInsightFacade
@@ -52,10 +61,13 @@ export default class InsightFacade implements IInsightFacade {
 	public async addDataset(id: string, content: string, kind: InsightDatasetKind): Promise<string[]> {
 		if (this.datasets.has(id)) {
 			return Promise.reject(new InsightError("The dataset already exists"));
-		} else if (id.search("_+") > -1) {
+		} else if (hasUnderscore(id)) {
 			return Promise.reject(new InsightError("The dataset contained underscore(s)"));
-		} else if (id.search("[^\\t\\r\\n\\v\\f ]+") > -1) {
+		} else if (nonWhitespace(id)) {
 			const datasetPath = "./data/" + id;
+
+			// create directory for this dataset's json files
+			fs.mkdirSync(datasetPath + "/courses", {recursive: true});
 
 			// parse zip contents and write to disk and memory
 			let jsZip = new JSZip();
@@ -149,9 +161,9 @@ export default class InsightFacade implements IInsightFacade {
 	}
 
 	public removeDataset(id: string): Promise<string> {
-		if (id.search("_+") > -1) {
+		if (hasUnderscore(id)) {
 			return Promise.reject(new InsightError("The dataset contained underscore(s)"));
-		} else if (id.search("[^\\t\\r\\n\\v\\f ]+") > -1) {
+		} else if (nonWhitespace(id)) {
 			if (this.datasets.delete(id)) {
 				return Promise.resolve(id);
 			} else {
@@ -163,62 +175,55 @@ export default class InsightFacade implements IInsightFacade {
 	}
 
 	public performQuery(query: unknown): Promise<InsightResult[]> {
-		let performQueryTemp = new IPerformQuery(this.datasets);
-		let results: InsightResult[] = [];
 		return new Promise((resolve, reject) => {
 			if (!(query instanceof Object)) {
 				// Reject if invalid type
-				throw new InsightError("Invalid query string: Invalid JSON");
+				reject(new InsightError("Invalid query string: Invalid JSON"));
 			}
+
+			// Check if query is valid and initialize fields
 			const tempQuery: any = query; // to have access to the keys
-
-			if (!(tempQuery["WHERE"])) {
-				// Reject if no WHERE block
-				throw new InsightError("Missing WHERE");
+			let validator = new IQueryValidator(query);
+			let dataset = this.datasets.get(validator.getDatasetName());
+			if (!dataset) {
+				throw new InsightError("Referenced dataset " + validator.getDatasetName() + " not added yet ");
 			}
 
-			if (!(tempQuery["OPTIONS"])) {
-				// Reject if no OPTIONS block
-				throw new InsightError("Missing OPTIONS");
-			}
+			// Get resulting kinds for query
+			let iPerformQuery = new IPerformQuery(dataset.kinds, tempQuery);
+			let filteredKinds = iPerformQuery.getFilteredKinds();
 
-			const whereBlock = tempQuery["WHERE"];
-			const optionBlock = tempQuery["OPTIONS"];
-			let filteredSections: IKind[] = [];
-			// WHERE block manipulation
-			if (Object.keys(whereBlock).length > 0) {
-				performQueryTemp.checkObjectLength(whereBlock, "WHERE");
-				filteredSections = performQueryTemp.mainWhereFilter(whereBlock);
-			}
-			// OPTIONS block manipulation
-			if (!(optionBlock["COLUMNS"])) {
-				// Reject if no COLUMNS block
-				throw new InsightError("OPTIONS missing COLUMNS");
-			}
-			const columnArray = optionBlock["COLUMNS"];
-			const orderField = optionBlock["ORDER"];
-			if (columnArray.length <= 0 || !(Array.isArray(columnArray))) {
-				// Reject if no COLUMN array is empty
-				throw new InsightError("COLUMNS must be a non-empty array");
-			}
-			// Check if WHERE block has filters, if not return the whole section array in the specified ZIP
-			filteredSections = performQueryTemp.checkIfWhereBlockHasFiltered(filteredSections, columnArray[0]);
+			// Perform aggregation (if applicable) and create InsightResults with specified fields
+			let results: InsightResult[] = [];
+			let columnsArray = validator.getColumnsArray();
+			if (validator.hasTransform) {
+				let groupKeys = validator.getGroupKeys();
+				let groups = createGroupsFromKinds(filteredKinds, groupKeys);
 
-			for (let section of filteredSections) {
-				// Go through every filteredSection to select specified values
-				let resultElementToBeAdded: any = {};
-				for (let columnName of columnArray) {
-					resultElementToBeAdded = performQueryTemp.createFieldInResultElementToBeAdded(columnName,
-						resultElementToBeAdded, section);
+				// Aggregate results
+				let applyResults: InsightResult[] = [];
+				for (const group of groups.values()) {
+					let applyResult = applyRulesToGroup(group, groupKeys, validator.getApplyRules());
+					applyResults.push(applyResult);
 				}
-				// Add resultElementToBeAdded into results array
-				results.push(resultElementToBeAdded);
+
+				// Turn into results with specified columns fields
+				for (const result of applyResults) {
+					results.push(selectFieldsFromResult(result, columnsArray));
+				}
+			} else {
+				if (filteredKinds.length > 5000) {
+					throw new ResultTooLargeError("The result is too big (>5000 results)");
+				}
+				results = createResultsWithSpecifiedFields(filteredKinds, validator.getColumnsArray());
 			}
-			if (results.length > 5000) {
-				return reject(new ResultTooLargeError("The result is too big (>5000 results)"));
+
+			// Order results
+			let orderedResults = orderResults(results, validator.getOrderKeys(), validator.getDir());
+			if (orderedResults.length > 5000) {
+				throw new ResultTooLargeError("The result is too big (>5000 results)");
 			}
-			results = performQueryTemp.orderFunction(orderField, columnArray, results);
-			resolve(results);
+			resolve(orderedResults);
 		});
 	}
 
@@ -226,4 +231,3 @@ export default class InsightFacade implements IInsightFacade {
 		return Promise.resolve(getDatasets(this.datasets));
 	}
 }
-
