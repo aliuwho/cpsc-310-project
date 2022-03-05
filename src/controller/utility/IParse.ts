@@ -1,4 +1,4 @@
-import {writeCourseSections} from "./IUtility";
+import {writeSectionsAndRooms} from "./IUtility";
 import JSZip from "jszip";
 import {ISection} from "../interface/IKind";
 
@@ -70,7 +70,7 @@ export async function parseAndWriteJsonFile(file: JSZip.JSZipObject, filePath: s
 		return parseJsonToCourseSections(fileContent).then((awaited) => {
 			if (awaited.length > 0) {
 				courseSections = courseSections.concat(awaited);
-				writeCourseSections(courseSections, filePath);
+				writeSectionsAndRooms(courseSections, filePath);
 			}
 			return Promise.all<ISection[]>(courseSections);
 		});
