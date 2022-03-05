@@ -1,0 +1,99 @@
+{
+	"title": "valid query with 3 args for AND",
+	"input": {
+		"WHERE": {
+			"AND": [
+				{
+					"IS": {
+						"courses_title": "intgrt sys desgn"
+					}
+				},
+				{
+					"IS": {
+						"courses_dept": "cpsc"
+					}
+				},
+				{
+					"GT": {
+						"courses_avg": 25
+					}
+				}
+			]
+		},
+		"OPTIONS": {
+			"COLUMNS": [
+				"courses_dept",
+				"courses_avg"
+			],
+			"ORDER": "courses_avg"
+		}
+	},
+	"errorExpected": false,
+	"verbose": false,
+	"expected": [
+		{
+			"courses_dept": "cpsc",
+			"courses_avg": 64
+		},
+		{
+			"courses_dept": "cpsc",
+			"courses_avg": 64
+		},
+		{
+			"courses_dept": "cpsc",
+			"courses_avg": 74
+		},
+		{
+			"courses_dept": "cpsc",
+			"courses_avg": 74
+		},
+		{
+			"courses_dept": "cpsc",
+			"courses_avg": 84.33
+		},
+		{
+			"courses_dept": "cpsc",
+			"courses_avg": 84.33
+		},
+		{
+			"courses_dept": "cpsc",
+			"courses_avg": 86.71
+		},
+		{
+			"courses_dept": "cpsc",
+			"courses_avg": 86.71
+		},
+		{
+			"courses_dept": "cpsc",
+			"courses_avg": 87.58
+		},
+		{
+			"courses_dept": "cpsc",
+			"courses_avg": 87.58
+		},
+		{
+			"courses_dept": "cpsc",
+			"courses_avg": 87.64
+		},
+		{
+			"courses_dept": "cpsc",
+			"courses_avg": 87.64
+		},
+		{
+			"courses_dept": "cpsc",
+			"courses_avg": 88.22
+		},
+		{
+			"courses_dept": "cpsc",
+			"courses_avg": 88.22
+		},
+		{
+			"courses_dept": "cpsc",
+			"courses_avg": 89.09
+		},
+		{
+			"courses_dept": "cpsc",
+			"courses_avg": 89.09
+		}
+	]
+}
