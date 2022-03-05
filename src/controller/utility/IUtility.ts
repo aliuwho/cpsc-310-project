@@ -6,8 +6,8 @@ import {ApplyToken} from "./IValidate";
 import Decimal from "decimal.js";
 
 // Writes course sections to a JSON file
-export async function writeCourseSections(courseSections: IKind[], filePath: string): Promise<void> {
-	await fs.writeFile(filePath, JSON.stringify(courseSections), () => 0);
+export async function writeSectionsAndRooms(kindInstance: IKind[], filePath: string): Promise<void> {
+	await fs.writeFile(filePath, JSON.stringify(kindInstance), () => 0);
 	return Promise.resolve();
 }
 

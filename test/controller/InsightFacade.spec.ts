@@ -13,6 +13,7 @@ import {folderTest} from "@ubccpsc310/folder-test";
 // import {getKeys, writeCourseSections} from "../../src/controller/utility/IUtility";
 // import {parseFile, parseFileContent} from "../../src/controller/utility/IParse";
 import chaiAsPromised from "chai-as-promised";
+import {describe} from "mocha";
 
 use(chaiAsPromised);
 
@@ -151,6 +152,185 @@ describe("InsightFacade", function () {
 			return (
 				facade
 					.addDataset("courses_reject", emptyFile, InsightDatasetKind.Courses)
+					.then()
+					// Unsure if then() can be empty / need to throw something
+					.catch((err) => {
+						expect(err).to.be.instanceOf(InsightError);
+					})
+			);
+		});
+	});
+
+	describe("Add Datasets for Room (C2)", function () {
+		let facade: IInsightFacade;
+
+		beforeEach(function () {
+			clearDisk();
+			facade = new InsightFacade();
+		});
+
+		it("should add single dataset - rooms", function () {
+			return facade.addDataset("rooms", rooms, InsightDatasetKind.Rooms).then((addedIDs) => {
+				expect(addedIDs).to.deep.equal(["rooms"]);
+				expect(addedIDs).to.be.an.instanceOf(Array);
+				expect(addedIDs).to.have.length(1);
+			});
+		});
+
+		it("should add multiple dataset - rooms", function () {
+			return facade
+				.addDataset("rooms", rooms, InsightDatasetKind.Rooms)
+				.then(() => {
+					return facade.addDataset("rooms-2", rooms, InsightDatasetKind.Rooms);
+				})
+				.then((addedIDs) => {
+					const expectedIDs: string[] = ["rooms", "rooms-2"];
+					expect(addedIDs).to.be.an.instanceOf(Array);
+					expect(addedIDs).to.have.length(2);
+					expect(addedIDs).to.have.deep.members(expectedIDs);
+				});
+		});
+
+		it("should ignore additional unlinked buildings when adding a room - rooms", function () {
+			const validFile = getContentFromArchives("additional-unlinked-buildings.zip");
+			return facade
+				.addDataset("valid-rooms", validFile, InsightDatasetKind.Rooms)
+				.then((addedIDs) => {
+					return facade.listDatasets();
+				})
+				.then((insightDatasets) => {
+					expect(insightDatasets).to.deep.equal([
+						{
+							id: "valid-rooms",
+							kind: InsightDatasetKind.Rooms,
+							numRows: 1,
+						},
+					]);
+					expect(insightDatasets).to.be.an.instanceOf(Array);
+					expect(insightDatasets).to.have.length(364);
+				});
+		});
+
+		it("rejects invalid id due to existing duplicate - rooms", function () {
+			return facade
+				.addDataset("rooms", rooms, InsightDatasetKind.Rooms)
+				.then((addedIDs) => {
+					expect(addedIDs).to.deep.equal(["rooms"]);
+					expect(addedIDs).to.be.an.instanceOf(Array);
+					expect(addedIDs).to.have.length(1);
+					return facade.addDataset("rooms", rooms, InsightDatasetKind.Rooms);
+				})
+				.catch((err) => {
+					expect(err).to.be.instanceOf(InsightError);
+				});
+		});
+
+		it("rejects invalid id (only whitespace) - rooms", function () {
+			return (
+				facade
+					.addDataset("   ", rooms, InsightDatasetKind.Rooms)
+					.then()
+					.catch((err) => {
+						expect(err).to.be.instanceOf(InsightError);
+					})
+			);
+		});
+
+		it("should reject adding an id (only variations of whitespaces) - rooms", async function () {
+			try {
+				await facade.addDataset("   \t \n", rooms, InsightDatasetKind.Rooms);
+				expect.fail("Should have rejected!");
+			} catch (err) {
+				expect(err).to.be.instanceof(InsightError);
+			}
+		});
+
+		it("should add datasets with ids that are not just whitespace - rooms", function () {
+			return facade.addDataset(" \n c   \t ", rooms, InsightDatasetKind.Rooms).then((insightDatasets) => {
+				expect(insightDatasets).to.be.an.instanceOf(Array);
+				expect(insightDatasets).to.have.length(1);
+				expect(insightDatasets).to.deep.equal([" \n c   \t "]);
+			});
+		});
+
+		it("rejects invalid id (contains underscore) - rooms", function () {
+			return (
+				facade
+					.addDataset("courses_reject", rooms, InsightDatasetKind.Rooms)
+					.then()
+					// Unsure if then() can be empty / need to throw something
+					.catch((err) => {
+						expect(err).to.be.instanceOf(InsightError);
+					})
+			);
+		});
+
+		it("should reject adding an id has any number of underscores - rooms", async function () {
+			try {
+				await facade.addDataset("rooms_1_2", rooms, InsightDatasetKind.Rooms);
+				expect.fail("Should have rejected!");
+			} catch (err) {
+				expect(err).to.be.instanceof(InsightError);
+			}
+		});
+
+		it("rejects 0 valid rooms - rooms", function () {
+			const emptyFile = getContentFromArchives("empty-courses.zip");
+			return (
+				facade
+					.addDataset("courses_reject", emptyFile, InsightDatasetKind.Courses)
+					.then()
+					// Unsure if then() can be empty / need to throw something
+					.catch((err) => {
+						expect(err).to.be.instanceOf(InsightError);
+					})
+			);
+		});
+
+		it("rejects 0 valid rooms - rooms", function () {
+			const emptyFile = getContentFromArchives("no-rooms.zip");
+			return (
+				facade
+					.addDataset("rooms_reject", emptyFile, InsightDatasetKind.Rooms)
+					.then()
+					// Unsure if then() can be empty / need to throw something
+					.catch((err) => {
+						expect(err).to.be.instanceOf(InsightError);
+					})
+			);
+		});
+
+		it("rejects invalid index htm file - rooms", function () {
+			const invalidIndexFile = getContentFromArchives("invalid-index-htm.zip");
+			return (
+				facade
+					.addDataset("rooms_reject", invalidIndexFile, InsightDatasetKind.Rooms)
+					.then()
+					// Unsure if then() can be empty / need to throw something
+					.catch((err) => {
+						expect(err).to.be.instanceOf(InsightError);
+					})
+			);
+		});
+
+		it("should reject zips without a rooms directory - rooms",function () {
+			const invalidRoomsTypoFile = getContentFromArchives("invalid-rooms-typo.zip");
+			return (
+				facade
+					.addDataset("rooms_reject", invalidRoomsTypoFile, InsightDatasetKind.Rooms)
+					.then()
+					// Unsure if then() can be empty / need to throw something
+					.catch((err) => {
+						expect(err).to.be.instanceOf(InsightError);
+					})
+			);
+		});
+
+		it("should reject zips with zero valid sections", async function () {
+			const invalidRoomsTypoFile = getContentFromArchives("invalid-rooms-typo.zip");
+			return (
+				facade
+					.addDataset("rooms_reject", invalidRoomsTypoFile, InsightDatasetKind.Rooms)
 					.then()
 					// Unsure if then() can be empty / need to throw something
 					.catch((err) => {

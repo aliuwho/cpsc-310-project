@@ -11,6 +11,7 @@ import * as fs from "fs";
 import * as fse from "fs-extra";
 import JSZip from "jszip";
 import {IElement} from "./interface/IElement";
+import {parseAndWriteHtmlFile} from "./utility/IRoomDataset";
 import {parseAndWriteJsonFile} from "./utility/IParse";
 import {IPerformQuery} from "./utility/IPerformQuery";
 import {hasUnderscore, nonWhitespace, orderResults} from "./utility/IValidate";
@@ -23,7 +24,7 @@ import {
 	selectFieldsFromResult,
 } from "./utility/IUtility";
 import {IQueryValidator} from "./utility/IQueryValidator";
-
+import {IKind, IRoom,} from "./interface/IKind";
 /**
  * This is the main programmatic entry point for the project.
  * Method documentation is in IInsightFacade
@@ -71,41 +72,92 @@ export default class InsightFacade implements IInsightFacade {
 			// parse zip contents and write to disk and memory
 			let jsZip = new JSZip();
 			const loadedZip = await jsZip.loadAsync(content, {base64: true});
-			let folderZip = loadedZip.folder("courses");
-			if (folderZip != null) {
-				// parse the files in the zip under the courses directory
-				let promisedSections: any[] = [];
-				folderZip.forEach(function (relativePath, file) {
-					let sections = parseAndWriteJsonFile(file, datasetPath + "/courses/" + relativePath + ".json");
-					promisedSections = promisedSections.concat(sections);
-				});
-				// process promised sections into disk and memory
-				return Promise.all(promisedSections).then((awaitedSections) => {
-					awaitedSections = awaitedSections.reduce((accumulator, value) => accumulator.concat(value), []);
-					if (awaitedSections.length === 0) {
-						fse.removeSync(datasetPath); // remove the dir we created
-						const error = new InsightError("The dataset did not contain any valid sections");
-						return Promise.reject(error);
-					} else {
-						this.datasets.set(id, {
-							kinds: awaitedSections,
-							info: {
-								id: id,
-								kind: InsightDatasetKind.Courses,
-								numRows: awaitedSections.length,
-							},
-						});
-						// grab keys and return
-						let keys = getKeys(this.datasets);
-						return Promise.resolve<string[]>(keys);
-					}
-				});
+
+			if (loadedZip.folder(/courses/).length > 0) {
+				return this.addCourseDataset(datasetPath, loadedZip, id);
+			} else if (loadedZip.folder(/rooms/).length > 0) {
+				return this.addRoomDataset(datasetPath, loadedZip, id);
 			} else {
 				return Promise.reject(new InsightError("The dataset did not contain a courses folder"));
 			}
 		} else {
 			return Promise.reject(new InsightError("The dataset contained only whitespace"));
 		}
+	}
+
+	private addRoomDataset(datasetPath: string, loadedZip: JSZip, id: string): Promise<string[]> {
+		// create directory for this dataset's json files
+		fs.mkdirSync(datasetPath + "/rooms", {recursive: true});
+
+		// Access the files
+		let folderZip = loadedZip.folder("rooms");
+		let indexHtm = folderZip?.file("index.htm");
+
+		// Rejects if index.htm does not exist
+		if (indexHtm === null) {
+			throw new InsightError("index.htm file does not exist");
+		}
+
+		// Convert index.htm to string and parse index.htm file
+		let promisedRooms: Promise<IRoom[]> = parseAndWriteHtmlFile(indexHtm, folderZip,
+			datasetPath + "/rooms/" + id + ".json");
+
+		// process promised sections into disk and memory
+		return promisedRooms.then((awaitedRooms) => {
+			// awaitedRooms = awaitedRooms.reduce((accumulator, value) => accumulator.concat(value), []);
+			if (awaitedRooms.length === 0) {
+				fse.removeSync(datasetPath); // remove the dir we created
+				const error = new InsightError("The dataset did not contain any valid rooms");
+				return Promise.reject(error);
+			} else {
+				this.datasets.set(id, {
+					kinds: awaitedRooms,
+					info: {
+						id: id,
+						kind: InsightDatasetKind.Rooms,
+						numRows: awaitedRooms.length,
+					},
+				});
+				// grab keys and return
+				let keys = getKeys(this.datasets);
+				return Promise.resolve<string[]>(keys);
+			}
+		});
+	}
+
+
+	private addCourseDataset(datasetPath: string, loadedZip: JSZip, id: string): Promise<string[]> {
+		// create directory for this dataset's json files
+		fs.mkdirSync(datasetPath + "/courses", {recursive: true});
+		let folderZip = loadedZip.folder("courses");
+
+		// parse the files in the zip under the courses directory
+		let promisedSections: any[] = [];
+		folderZip?.forEach(function(relativePath, file) {
+			let sections = parseAndWriteJsonFile(file, datasetPath + "/courses/" + relativePath + ".json");
+			promisedSections = promisedSections.concat(sections);
+		});
+		// process promised sections into disk and memory
+		return Promise.all(promisedSections).then((awaitedSections) => {
+			awaitedSections = awaitedSections.reduce((accumulator, value) => accumulator.concat(value), []);
+			if (awaitedSections.length === 0) {
+				fse.removeSync(datasetPath); // remove the dir we created
+				const error = new InsightError("The dataset did not contain any valid sections");
+				return Promise.reject(error);
+			} else {
+				this.datasets.set(id, {
+					kinds: awaitedSections,
+					info: {
+						id: id,
+						kind: InsightDatasetKind.Courses,
+						numRows: awaitedSections.length,
+					},
+				});
+				// grab keys and return
+				let keys = getKeys(this.datasets);
+				return Promise.resolve<string[]>(keys);
+			}
+		});
 	}
 
 	public removeDataset(id: string): Promise<string> {
