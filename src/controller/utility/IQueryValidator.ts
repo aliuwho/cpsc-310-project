@@ -11,21 +11,24 @@ import {
 	checkSubset,
 	checkValidApplyRule,
 	checkValidMCompArg,
-	checkValidSCompArg, Direction,
+	checkValidSCompArg,
+	Direction,
 	hasUnderscore,
 	isCoursesField,
 	isRoomsField,
-	KeyType
+	KeyType,
 } from "./IValidate";
 
 // Class to validate query structure for InsightFacade
 export class IQueryValidator {
 	private datasetName: string = "";
 	private datasetKind: string = "";
-	private readonly validKeys: string[];
+	private groupKeys: string[];
+	private applyBlock: any;
 	private readonly columnsArray: any;
 	private readonly orderKeys: string[];
-	private dir: string = Direction.UP;  	// Default to ascending order
+	private dir: string = Direction.UP; // Default to ascending order
+	public readonly hasTransform: boolean;
 
 	// Constructs a performQuery object
 	constructor(query: any) {
@@ -36,9 +39,11 @@ export class IQueryValidator {
 
 		// Check TRANSFORMATIONS block
 		const transformBlock = query["TRANSFORMATIONS"];
-		this.validKeys = [];
+		this.hasTransform = false;
+		this.groupKeys = [];
 		if (transformBlock) {
-			this.validKeys = this.extractValidKeys(transformBlock);
+			this.hasTransform = true;
+			this.checkTransformBlock(transformBlock);
 		}
 
 		// Check COLUMNS, and check ORDER if it exists
@@ -122,8 +127,9 @@ export class IQueryValidator {
 	private checkColumnsArray(): void {
 		checkExists(this.columnsArray, "COLUMNS");
 		checkNonEmptyArray(this.columnsArray, "COLUMNS");
-		if (this.validKeys.length > 0) {
-			checkSubset(this.columnsArray, this.validKeys, "COLUMNS", "GROUP/APPLY");
+		let validKeys = this.groupKeys.concat(this.extractApplyKeys());
+		if (validKeys.length > 0) {
+			checkSubset(this.columnsArray, validKeys, "COLUMNS", "GROUP/APPLY");
 		} else {
 			this.columnsArray.forEach((columnKey: any) => {
 				this.checkValidKey(columnKey, KeyType.KEY);
@@ -156,32 +162,32 @@ export class IQueryValidator {
 		}
 	}
 
-	// Checks that an APPLY block is valid and returns the applyKey(s). If the APPLY block or any keys is invalid, throws an InsightError.
-	private extractApplyKeys(applyBlock: any): string[] {
-		checkExists(applyBlock, "APPLY in TRANSFORMATIONS");
-		// Note: APPLY is allowed to be an empty array
-		if (!Array.isArray(applyBlock)) {
-			throw new InsightError("APPLY is not an array");
+	// Returns the applyKey(s) of the applyBlock (if it exists). If any of the keys is invalid, throws an InsightError.
+	private extractApplyKeys(): string[] {
+		if (!this.applyBlock) {
+			return [];
 		}
-
-		// Extract keys from block
 		let extractedKeys: string[] = [];
-		for (const item of applyBlock) {
+		for (const item of this.applyBlock) {
 			checkValidApplyRule(item, this);
 			extractedKeys.push(Object.keys(item)[0]);
 		}
 		return extractedKeys;
 	}
 
-	// Checks that a TRANSFORMATIONS block is valid and returns key(s). If not, throws an InsightError.
-	private extractValidKeys(transformBlock: any): string[] {
+	// Checks that a TRANSFORMATIONS block is valid and extracts key(s). If not, throws an InsightError.
+	private checkTransformBlock(transformBlock: any) {
 		checkObjectLength(transformBlock, 2, "TRANSFORM");
 		const groupBlock = transformBlock["GROUP"];
 		this.checkGroupBlock(groupBlock);
-		let groupAndApplyKeys: string[] = [];
-		groupAndApplyKeys = groupAndApplyKeys.concat(groupBlock);
-		groupAndApplyKeys = groupAndApplyKeys.concat(this.extractApplyKeys(transformBlock["APPLY"]));
-		return groupAndApplyKeys;
+		this.groupKeys = groupBlock;
+
+		this.applyBlock = transformBlock["APPLY"];
+		checkExists(this.applyBlock, "APPLY in TRANSFORMATIONS");
+		// Note: APPLY is allowed to be an empty array
+		if (!Array.isArray(this.applyBlock)) {
+			throw new InsightError("APPLY is not an array");
+		}
 	}
 
 	// Checks that an ORDER block is valid and returns the key(s). If the ORDER block or any keys is invalid, throws an InsightError.
@@ -195,7 +201,6 @@ export class IQueryValidator {
 		}
 		checkSubset(orderKeys, this.columnsArray, "ORDER", "COLUMNS");
 		return orderKeys;
-
 	}
 
 	// Checks if a key is valid, given a KeyType. If not, throws InsightError
@@ -282,5 +287,13 @@ export class IQueryValidator {
 
 	public getColumnsArray(): string[] {
 		return this.columnsArray;
+	}
+
+	public getGroupKeys(): string[] {
+		return this.groupKeys;
+	}
+
+	public getApplyRules(): string[] {
+		return this.applyBlock;
 	}
 }

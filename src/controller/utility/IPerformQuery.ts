@@ -1,26 +1,18 @@
-import {InsightError, InsightResult, ResultTooLargeError} from "../IInsightFacade";
+import {InsightError} from "../IInsightFacade";
 import {IKind} from "../interface/IKind";
-import {Direction} from "./IValidate";
 
-// Class to extract InsightResults from a valid query
+// Class to extract filtered IKinds for a valid query
 export class IPerformQuery {
 	protected unchangedKinds: IKind[];
-	protected insightResults: InsightResult[];
+	protected filteredKinds: IKind[];
 
-	constructor(kinds: IKind[], query: any, columnsArray: string[], orderKeys: string[], dir: string) {
-		// Check if query is valid and initialize fields
+	constructor(kinds: IKind[], query: any) {
 		this.unchangedKinds = kinds;
-		let filteredKinds: IKind[] = this.mainWhereFilter(query["WHERE"]);
-		if (filteredKinds.length > 5000) {
-			throw new ResultTooLargeError("The result is too big (>5000 results)");
-		}
-		let unorderedResults = this.createResultsWithSpecifiedFields(filteredKinds, columnsArray);
-		this.insightResults = this.orderResults(unorderedResults, orderKeys, dir);
-
+		this.filteredKinds = this.mainWhereFilter(query["WHERE"]);
 	}
 
-	public getInsightResults(): InsightResult[] {
-		return this.insightResults;
+	public getFilteredKinds(): IKind[] {
+		return this.filteredKinds;
 	}
 
 	private mainWhereFilter(filterBlock: any): IKind[] {
@@ -38,7 +30,6 @@ export class IPerformQuery {
 					collatedResultArray.push(filteredArray);
 				}
 				finalResult = this.filterOr(collatedResultArray);
-
 			} else {
 				const andBlock = filterBlock["AND"];
 				for (let filter of andBlock) {
@@ -53,7 +44,6 @@ export class IPerformQuery {
 		} else if (filterBlock["IS"]) {
 			// S Comparison
 			finalResult = this.sComparison(filterBlock);
-
 		} else if (filterBlock["NOT"]) {
 			// Negation
 			const negBlock = filterBlock["NOT"];
@@ -156,81 +146,4 @@ export class IPerformQuery {
 			}
 		});
 	}
-
-	// Converts an IKind into an InsightResult with specified fields.
-	private createResultWithSpecifiedFields(item: IKind, specifiedFields: string[]): InsightResult {
-		let resultElement: InsightResult = {};
-		for (const columnName of specifiedFields) {
-			const splitKey = columnName.split("_");
-			const specifiedField = splitKey[1];
-			resultElement[columnName] = item[specifiedField as keyof IKind];
-		}
-		return resultElement;
-	}
-
-	// Converts a list of IKinds into InsightResults with specified fields.
-	private createResultsWithSpecifiedFields(kinds: IKind[], specifiedFields: string[]): InsightResult[] {
-		let results: InsightResult[] = [];
-		for (const item of kinds) {
-			const resultElement = this.createResultWithSpecifiedFields(item, specifiedFields);
-			results.push(resultElement);
-		}
-		return results;
-	}
-
-	// Sort a list of InsightResults by a tuple (orderKeys) and direction using insertion sort
-	private orderResults(results: InsightResult[], orderKeys: string[], dir: string): InsightResult[] {		// Sort by order
-		for (let i = 1; i < results.length; i++) {
-			let currentResultElement = results[i];
-			let currentVariable = currentResultElement;
-			let comparisonIndex = i - 1;
-			while (comparisonIndex >= 0 &&
-			this.compareResults(results[comparisonIndex], currentVariable, orderKeys, dir)) {
-				results[comparisonIndex + 1] = results[comparisonIndex];
-				comparisonIndex = comparisonIndex - 1;
-			}
-			results[comparisonIndex + 1] = currentResultElement;
-		}
-		return results;
-	}
-
-	// Given a direction and orderKeys, returns:
-	// 	1	 if A comes before B
-	// 	0	 if A is tied with B
-	// -1	 if A comes after B
-	private compareResults(resultA: InsightResult, resultB: InsightResult, orderKeys: string[], dir: string): number {
-		if (orderKeys.length === 1) {
-			let key = orderKeys[0];
-			if (resultA[key] === resultB[key]) {
-				return 0;
-			}
-			switch (dir) {
-				case Direction.UP:
-					// A before B iff A < B
-					if (resultA[key] < resultB[key]) {
-						return 1;
-					} else {
-						return -1;
-					}
-				case Direction.DOWN:
-					// A before B iff A > B
-					if (resultA[key] > resultB[key]) {
-						return 1;
-					} else {
-						return -1;
-					}
-				default:
-					throw new InsightError("Invalid DIRECTION");
-			}
-		} else {
-			let firstKeyComparison = this.compareResults(resultA, resultB, [orderKeys[0]], dir);
-			if (firstKeyComparison !== 0) {
-				return this.compareResults(resultA, resultB, orderKeys.splice(1), dir);
-			} else {
-				return firstKeyComparison;
-			}
-		}
-
-	}
-
 }

@@ -1,16 +1,38 @@
-import {InsightDatasetKind, InsightError} from "../IInsightFacade";
+import {InsightDatasetKind, InsightError, InsightResult} from "../IInsightFacade";
 import {IQueryValidator} from "./IQueryValidator";
 
 // File to validate inputs for InsightFacade
 
-const S_FIELDS = ["dept", "id", "instructor", "title", "uuid", "fullname", "shortname",
-	"number", "name", "address", "type", "furniture", "href"];
+const S_FIELDS = [
+	"dept",
+	"id",
+	"instructor",
+	"title",
+	"uuid",
+	"fullname",
+	"shortname",
+	"number",
+	"name",
+	"address",
+	"type",
+	"furniture",
+	"href",
+];
 const M_FIELDS = ["avg", "pass", "fail", "audit", "year", "lat", "lon", "seats"];
-const COURSES_FIELDS = ["avg", "pass", "fail", "audit", "year", "dept",
-	"id", "instructor", "title", "uuid"];
-const ROOMS_FIELDS = ["lat", "lon", "seats", "fullname", "shortname",
-	"number", "name", "address", "type", "furniture", "href"];
-const APPLY_TOKENS = ["count", "sum", "min", "max", "avg"];
+const COURSES_FIELDS = ["avg", "pass", "fail", "audit", "year", "dept", "id", "instructor", "title", "uuid"];
+const ROOMS_FIELDS = [
+	"lat",
+	"lon",
+	"seats",
+	"fullname",
+	"shortname",
+	"number",
+	"name",
+	"address",
+	"type",
+	"furniture",
+	"href",
+];
 
 export enum KeyType {
 	M_KEY = "M KEY",
@@ -21,19 +43,31 @@ export enum KeyType {
 }
 
 export enum Direction {
-	UP = "UP", 		// Represents ascending order
-	DOWN = "DOWN" 	// Represents descending order
+	UP = "UP", // Represents ascending order
+	DOWN = "DOWN", // Represents descending order
+}
+
+export enum ApplyToken {
+	COUNT = "COUNT",
+	SUM = "SUM",
+	MIN = "MIN",
+	MAX = "MAX",
+	AVG = "AVG",
 }
 
 // Throws InsightError if field is not a valid field for a keyType
 export function checkField(field: string, keyType: KeyType): void {
 	if (keyType === KeyType.M_KEY) {
-		if (!M_FIELDS.includes(field)) {
+		if (!isMField(field)) {
 			throw new InsightError("Invalid MField: " + field);
 		}
 	} else if (keyType === KeyType.S_KEY) {
-		if (!S_FIELDS.includes(field)) {
+		if (!isSField(field)) {
 			throw new InsightError("Invalid SField: " + field);
+		}
+	} else if (keyType === KeyType.KEY) {
+		if (!isMField(field) && !isSField(field)) {
+			throw new InsightError("Invalid key field: " + field);
 		}
 	} else {
 		throw new Error("Invalid key type passed to checkField");
@@ -50,9 +84,21 @@ export function isRoomsField(field: string): boolean {
 	return ROOMS_FIELDS.includes(field);
 }
 
+// Returns true if a field is an SField (string field)
+function isSField(field: string) {
+	return S_FIELDS.includes(field);
+}
+
+// Returns true if a field is an MField (numeric field)
+function isMField(field: string) {
+	return M_FIELDS.includes(field);
+}
+
 // Checks that a string is a valid apply token
 export function checkValidApplyToken(str: string) {
-	return APPLY_TOKENS.includes(str);
+	if (!Object.keys(ApplyToken).includes(str)) {
+		throw new InsightError("Invalid APPLY token");
+	}
 }
 
 // Returns true if string has an underscore
@@ -62,7 +108,7 @@ export function hasUnderscore(str: string): boolean {
 
 // Returns true if a string is not just whitespace characters
 export function nonWhitespace(str: string): boolean {
-	return (str.search("[^\\t\\r\\n\\v\\f ]+") > -1);
+	return str.search("[^\\t\\r\\n\\v\\f ]+") > -1;
 }
 
 // Check that an object has the correct length. Otherwise, throws InsightError with object's name
@@ -76,7 +122,7 @@ export function checkObjectLength(obj: any, len: number, name: string): void {
 // Check that an object is non-empty array.
 // Otherwise, throws error with name
 export function checkNonEmptyArray(obj: any, name: string): void {
-	if (obj.length <= 0 || !(Array.isArray(obj))) {
+	if (obj.length <= 0 || !Array.isArray(obj)) {
 		// Reject if COLUMN array is empty
 		throw new InsightError(name + " must be a non-empty array");
 	}
@@ -161,16 +207,84 @@ export function checkValidApplyRule(applyObj: any, validator: IQueryValidator): 
 	checkObjectLength(applyObj, 1, "APPLY RULE");
 	let applyKey = Object.keys(applyObj)[0];
 	validator.checkValidKey(applyKey, KeyType.APPLY_KEY);
-	let applyRuleValue = applyObj[applyKey];
-	let applyToken = Object.keys(applyRuleValue)[0];
-	checkValidApplyToken(applyToken);
-	let applyTokenKey = applyRuleValue[applyToken];
-	validator.checkValidKey(applyTokenKey, KeyType.KEY);
+	let token = Object.keys(applyObj[applyKey])[0];
+	checkValidApplyToken(token);
+	let key = applyObj[applyKey][token];
+	validator.checkValidKey(key, KeyType.KEY);
+	let keyField = key.split("_")[1];
+	checkField(keyField, KeyType.KEY);
+	checkValidTokenField(keyField, token);
+}
+
+// Checks if a field is a valid field for an ApplyToken. If not, throws InsightError
+function checkValidTokenField(field: string, token: string) {
+	if (token !== ApplyToken.COUNT && isSField(field)) {
+		throw new InsightError(token + " requires a numeric field");
+	}
 }
 
 // Check if an object exists. If not, throw InsightError
 export function checkExists(obj: any, name: string) {
 	if (!obj) {
 		throw new InsightError("Missing " + name);
+	}
+}
+
+// Sort a list of InsightResults by a tuple (orderKeys) and direction using insertion sort
+export function orderResults(results: InsightResult[], orderKeys: string[], dir: string): InsightResult[] {
+	// Sort by order
+	for (let i = 1; i < results.length; i++) {
+		let currentResultElement = results[i];
+		let currentVariable = currentResultElement;
+		let comparisonIndex = i - 1;
+		while (comparisonIndex >= 0 && compareResults(results[comparisonIndex], currentVariable, orderKeys, dir)) {
+			results[comparisonIndex + 1] = results[comparisonIndex];
+			comparisonIndex = comparisonIndex - 1;
+		}
+		results[comparisonIndex + 1] = currentResultElement;
+	}
+	return results;
+}
+
+// Given a direction and orderKeys, returns:
+// 	1	 if A comes before B
+// 	0	 if A is tied with B
+// -1	 if A comes after B
+export function compareResults(
+	resultA: InsightResult,
+	resultB: InsightResult,
+	orderKeys: string[],
+	dir: string
+): number {
+	if (orderKeys.length === 1) {
+		let key = orderKeys[0];
+		if (resultA[key] === resultB[key]) {
+			return 0;
+		}
+		switch (dir) {
+			case Direction.UP:
+				// A before B iff A < B
+				if (resultA[key] < resultB[key]) {
+					return 1;
+				} else {
+					return -1;
+				}
+			case Direction.DOWN:
+				// A before B iff A > B
+				if (resultA[key] > resultB[key]) {
+					return 1;
+				} else {
+					return -1;
+				}
+			default:
+				throw new InsightError("Invalid DIRECTION");
+		}
+	} else {
+		let firstKeyComparison = compareResults(resultA, resultB, [orderKeys[0]], dir);
+		if (firstKeyComparison !== 0) {
+			return compareResults(resultA, resultB, orderKeys.splice(1), dir);
+		} else {
+			return firstKeyComparison;
+		}
 	}
 }

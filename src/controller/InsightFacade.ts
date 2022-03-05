@@ -5,6 +5,7 @@ import {
 	InsightError,
 	InsightResult,
 	NotFoundError,
+	ResultTooLargeError,
 } from "./IInsightFacade";
 import * as fs from "fs";
 import * as fse from "fs-extra";
@@ -12,8 +13,15 @@ import JSZip from "jszip";
 import {IElement} from "./interface/IElement";
 import {parseAndWriteJsonFile} from "./utility/IParse";
 import {IPerformQuery} from "./utility/IPerformQuery";
-import {hasUnderscore, nonWhitespace} from "./utility/IValidate";
-import {getDatasets, getKeys} from "./utility/IUtility";
+import {hasUnderscore, nonWhitespace, orderResults} from "./utility/IValidate";
+import {
+	applyRulesToGroup,
+	createGroupsFromKinds,
+	createResultsWithSpecifiedFields,
+	getDatasets,
+	getKeys,
+	selectFieldsFromResult,
+} from "./utility/IUtility";
 import {IQueryValidator} from "./utility/IQueryValidator";
 
 /**
@@ -121,18 +129,49 @@ export default class InsightFacade implements IInsightFacade {
 				reject(new InsightError("Invalid query string: Invalid JSON"));
 			}
 
-			// Validate query using IQueryValidator
+			// Check if query is valid and initialize fields
 			const tempQuery: any = query; // to have access to the keys
-			let validator = new IQueryValidator(tempQuery);
+			let validator = new IQueryValidator(query);
 			let dataset = this.datasets.get(validator.getDatasetName());
 			if (!dataset) {
-				reject(new InsightError("Referenced dataset " + validator.getDatasetName() + " not added yet "));
-			} else {
-				// Get InsightResults using IPerformQuery
-				let iPerformQuery = new IPerformQuery(dataset.kinds, tempQuery,
-					validator.getColumnsArray(), validator.getOrderKeys(), validator.getDir());
-				resolve(iPerformQuery.getInsightResults());
+				throw new InsightError("Referenced dataset " + validator.getDatasetName() + " not added yet ");
 			}
+
+			// Get resulting kinds for query
+			let iPerformQuery = new IPerformQuery(dataset.kinds, tempQuery);
+			let filteredKinds = iPerformQuery.getFilteredKinds();
+
+			// Perform aggregation (if applicable) and create InsightResults with specified fields
+			let results: InsightResult[] = [];
+			let columnsArray = validator.getColumnsArray();
+			if (validator.hasTransform) {
+				let groupKeys = validator.getGroupKeys();
+				let groups = createGroupsFromKinds(filteredKinds, groupKeys);
+
+				// Aggregate results
+				let applyResults: InsightResult[] = [];
+				for (const group of groups.values()) {
+					let applyResult = applyRulesToGroup(group, groupKeys, validator.getApplyRules());
+					applyResults.push(applyResult);
+				}
+
+				// Turn into results with specified columns fields
+				for (const result of applyResults) {
+					results.push(selectFieldsFromResult(result, columnsArray));
+				}
+			} else {
+				if (filteredKinds.length > 5000) {
+					throw new ResultTooLargeError("The result is too big (>5000 results)");
+				}
+				results = createResultsWithSpecifiedFields(filteredKinds, validator.getColumnsArray());
+			}
+
+			// Order results
+			let orderedResults = orderResults(results, validator.getOrderKeys(), validator.getDir());
+			if (orderedResults.length > 5000) {
+				throw new ResultTooLargeError("The result is too big (>5000 results)");
+			}
+			resolve(orderedResults);
 		});
 	}
 
