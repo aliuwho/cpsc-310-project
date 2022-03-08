@@ -6,30 +6,37 @@ import {IRoom, ISection} from "../interface/IKind";
 import {writeSectionsAndRooms} from "./IUtility";
 import {parseJsonToCourseSections} from "./IParse";
 
+// Parses a JSZip object representing a file into rooms in buildings and writes rooms to filePath in JSON format
 export async function parseAndWriteHtmlFile(indexHtm: any, folderZip: JSZip | null, filePath: string):
 	Promise<IRoom[]> {
 	return indexHtm?.async("string").then(async (fileContent: string) => {
 		let indexDocument = parse(fileContent);
-
 		// DFS for table objects
-		const awaitedRooms = await searchIndex(indexDocument.childNodes, folderZip as JSZip, []);
-		writeSectionsAndRooms(awaitedRooms, filePath);
-		return Promise.all<IRoom[]>(awaitedRooms);
+		const allPromisedRooms = parseRoomsFromIndex(indexDocument.childNodes, folderZip as JSZip);
+		return Promise.all(allPromisedRooms)
+			.then((awaitedRoomArrays) => {
+				const allActualRooms = awaitedRoomArrays.flat(1);
+				writeSectionsAndRooms(allActualRooms, filePath);
+				return Promise.resolve(allActualRooms);
+			});
 	});
 }
 
-export function searchIndex(nodeArray: ChildNode[], folderZip: JSZip, allPromises: any[]): Promise<IRoom[]> {
-	nodeArray.forEach((childNode) => {
+// Main DFS to produce an array of Promise<IRoom[]> for multiple rooms in multiple buildings from the index.htm file
+export function parseRoomsFromIndex(nodeArray: ChildNode[], folderZip: JSZip): any[] {
+	let allPromises: any[] = [];
+	for(const childNode of nodeArray){
 		if (childNode.nodeName === "td" && "attrs" in childNode &&
-			childNode.attrs[0].value === "views-field views-field-field-building-image") {
-			allPromises = allPromises.concat(searchForRoomsinBuilding(childNode, folderZip));
+			childNode.attrs[0].value === "views-field views-field-nothing") {
+			allPromises.push(searchForRoomsinBuilding(childNode, folderZip));
 		} else if ("childNodes" in childNode) {
-			searchIndex(childNode.childNodes, folderZip, allPromises);
+			allPromises = allPromises.concat(parseRoomsFromIndex(childNode.childNodes, folderZip));
 		}
-	});
-	return Promise.all(allPromises);
+	}
+	return allPromises; // [Promise<IRoom[]>, Promise<IRoom[]>, ...]
 }
 
+// Parses a Promise<IRoom[]> for multiple rooms in 1 building from the index.htm file and building.htm file
 async function searchForRoomsinBuilding(childNode: Element, folderZip: JSZip): Promise<IRoom[]> {
 	let promisedRoomArrayForOneBuilding: IRoom[] = [];
 	// Get directory
@@ -64,7 +71,7 @@ async function searchForRoomsinBuilding(childNode: Element, folderZip: JSZip): P
 			let room: IRoom = {
 				fullname: tempFullName,
 				shortname: tempShortName,
-				number: roomInfo["tempRoom"],
+				number: roomInfo["tempRoomNumber"],
 				name: tempShortName + roomInfo["tempRoom"],
 				address: tempAddress,
 				lat: geoLocationObject["lat"],
@@ -80,8 +87,8 @@ async function searchForRoomsinBuilding(childNode: Element, folderZip: JSZip): P
 	return Promise.resolve(promisedRoomArrayForOneBuilding);
 }
 
-
-function extractBuildingInfo(trNode: Element) {
+// Helper function: extract tempShortName, tempFullName, tempAddress from index.htm file
+function extractBuildingInfo(trNode: Element): any {
 	let tempShortName = "";
 	let tempFullName = "";
 	let tempAddress = "";
@@ -100,6 +107,7 @@ function extractBuildingInfo(trNode: Element) {
 	return {tempShortName, tempFullName, tempAddress};
 }
 
+// Helper function: extract the specific td value from index.htm file
 function extractValue(trChild: Element, tempShortName: string) {
 	if ("value" in trChild.childNodes[0]) {
 		tempShortName = trChild.childNodes[0].value.trim();
@@ -107,6 +115,7 @@ function extractValue(trChild: Element, tempShortName: string) {
 	return tempShortName;
 }
 
+// Helper function: returns promise of the geolocation GET request response
 function findGeolocation(tempAddress: string): Promise<any>{
 	return new Promise(function(resolve, reject) {
 		http.get(encodeURI("http://cs310.students.cs.ubc.ca:11316/api/v1/project_team573/" + tempAddress), (res) => {
@@ -129,6 +138,7 @@ function findGeolocation(tempAddress: string): Promise<any>{
 	});
 }
 
+// Parses an array of buildingInfo objects for multiple rooms in 1 building from the building.htm file
 function searchForBuildingInformation(nodeArray: ChildNode[], resultArray: any[]): any[] {
 	nodeArray.forEach((childNode) => {
 		if (childNode.nodeName === "td" && "attrs" in childNode &&

@@ -11,7 +11,7 @@ import * as fs from "fs";
 import * as fse from "fs-extra";
 import JSZip from "jszip";
 import {IElement} from "./interface/IElement";
-import {parseAndWriteHtmlFile} from "./utility/IRoomDataset";
+import {parseAndWriteHtmlFile} from "./utility/IRoomParse";
 import {parseAndWriteJsonFile} from "./utility/IParse";
 import {IPerformQuery} from "./utility/IPerformQuery";
 import {hasUnderscore, nonWhitespace, orderResults} from "./utility/IValidate";
@@ -65,9 +65,6 @@ export default class InsightFacade implements IInsightFacade {
 			return Promise.reject(new InsightError("The dataset contained underscore(s)"));
 		} else if (nonWhitespace(id)) {
 			const datasetPath = "./data/" + id;
-
-			// create directory for this dataset's json files
-			fs.mkdirSync(datasetPath + "/courses", {recursive: true});
 
 			// parse zip contents and write to disk and memory
 			let jsZip = new JSZip();

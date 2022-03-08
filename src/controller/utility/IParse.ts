@@ -1,6 +1,8 @@
 import {writeSectionsAndRooms} from "./IUtility";
 import JSZip from "jszip";
-import {ISection} from "../interface/IKind";
+import {IRoom, ISection} from "../interface/IKind";
+import {parse} from "parse5";
+import {parseRoomsFromIndex} from "./IRoomParse";
 
 // Helper function for parseFileContent
 // Returns true if a section object is valid and can be parsed into a section
@@ -76,3 +78,4 @@ export async function parseAndWriteJsonFile(file: JSZip.JSZipObject, filePath: s
 		});
 	});
 }
+

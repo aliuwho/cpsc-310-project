@@ -9,11 +9,9 @@ import {
 import InsightFacade from "../../src/controller/InsightFacade";
 import {expect, use} from "chai";
 import {clearDisk, getContentFromArchives} from "../TestUtil";
-import {folderTest} from "@ubccpsc310/folder-test";
-// import {getKeys, writeCourseSections} from "../../src/controller/utility/IUtility";
-// import {parseFile, parseFileContent} from "../../src/controller/utility/IParse";
 import chaiAsPromised from "chai-as-promised";
 import {describe} from "mocha";
+import {folderTest} from "@ubccpsc310/folder-test";
 
 use(chaiAsPromised);
 
@@ -169,6 +167,26 @@ describe("InsightFacade", function () {
 			facade = new InsightFacade();
 		});
 
+		it("should add single dataset - rooms in 1 building", function () {
+			const validFile = getContentFromArchives("one-building.zip");
+			return facade
+				.addDataset("one-building-with-valid-rooms", validFile, InsightDatasetKind.Rooms)
+				.then((addedIDs) => {
+					return facade.listDatasets();
+				})
+				.then((insightDatasets) => {
+					expect(insightDatasets).to.deep.equal([
+						{
+							id: "one-building-with-valid-rooms",
+							kind: InsightDatasetKind.Rooms,
+							numRows: 5,
+						},
+					]);
+					expect(insightDatasets).to.be.an.instanceOf(Array);
+					expect(insightDatasets).to.have.length(1);
+				});
+		});
+
 		it("should add single dataset - rooms", function () {
 			return facade.addDataset("rooms", rooms, InsightDatasetKind.Rooms).then((addedIDs) => {
 				expect(addedIDs).to.deep.equal(["rooms"]);
@@ -203,11 +221,11 @@ describe("InsightFacade", function () {
 						{
 							id: "valid-rooms",
 							kind: InsightDatasetKind.Rooms,
-							numRows: 1,
+							numRows: 364,
 						},
 					]);
 					expect(insightDatasets).to.be.an.instanceOf(Array);
-					expect(insightDatasets).to.have.length(364);
+					expect(insightDatasets).to.have.length(1);
 				});
 		});
 
