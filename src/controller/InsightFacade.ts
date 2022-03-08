@@ -24,7 +24,7 @@ import {
 	selectFieldsFromResult,
 } from "./utility/IUtility";
 import {IQueryValidator} from "./utility/IQueryValidator";
-import {IRoom,} from "./interface/IKind";
+import {IRoom} from "./interface/IKind";
 
 /**
  * This is the main programmatic entry point for the project.
@@ -97,8 +97,11 @@ export default class InsightFacade implements IInsightFacade {
 		}
 
 		// Convert index.htm to string and parse index.htm file
-		let promisedRooms: Promise<IRoom[]> = parseAndWriteHtmlFile(indexHtm, folderZip,
-			datasetPath + "/rooms/" + id + ".json");
+		let promisedRooms: Promise<IRoom[]> = parseAndWriteHtmlFile(
+			indexHtm,
+			folderZip,
+			datasetPath + "/rooms/" + id + ".json"
+		);
 
 		// process promised sections into disk and memory
 		return promisedRooms.then((awaitedRooms) => {
@@ -122,7 +125,6 @@ export default class InsightFacade implements IInsightFacade {
 			}
 		});
 	}
-
 
 	private addCourseDataset(datasetPath: string, loadedZip: JSZip, id: string): Promise<string[]> {
 		// create directory for this dataset's json files

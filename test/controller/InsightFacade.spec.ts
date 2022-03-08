@@ -58,7 +58,7 @@ describe("InsightFacade", function () {
 			const validFile = getContentFromArchives("one-valid-course.zip");
 			return facade
 				.addDataset("valid-course", validFile, InsightDatasetKind.Courses)
-				.then((addedIDs) => {
+				.then(() => {
 					return facade.listDatasets();
 				})
 				.then((insightDatasets) => {
@@ -171,7 +171,7 @@ describe("InsightFacade", function () {
 			const validFile = getContentFromArchives("one-building.zip");
 			return facade
 				.addDataset("one-building-with-valid-rooms", validFile, InsightDatasetKind.Rooms)
-				.then((addedIDs) => {
+				.then(() => {
 					return facade.listDatasets();
 				})
 				.then((insightDatasets) => {
@@ -213,7 +213,7 @@ describe("InsightFacade", function () {
 			const validFile = getContentFromArchives("additional-unlinked-buildings.zip");
 			return facade
 				.addDataset("valid-rooms", validFile, InsightDatasetKind.Rooms)
-				.then((addedIDs) => {
+				.then(() => {
 					return facade.listDatasets();
 				})
 				.then((insightDatasets) => {
@@ -244,14 +244,12 @@ describe("InsightFacade", function () {
 		});
 
 		it("rejects invalid id (only whitespace) - rooms", function () {
-			return (
-				facade
-					.addDataset("   ", rooms, InsightDatasetKind.Rooms)
-					.then()
-					.catch((err) => {
-						expect(err).to.be.instanceOf(InsightError);
-					})
-			);
+			return facade
+				.addDataset("   ", rooms, InsightDatasetKind.Rooms)
+				.then()
+				.catch((err) => {
+					expect(err).to.be.instanceOf(InsightError);
+				});
 		});
 
 		it("should reject adding an id (only variations of whitespaces) - rooms", async function () {
@@ -331,7 +329,7 @@ describe("InsightFacade", function () {
 			);
 		});
 
-		it("should reject zips without a rooms directory - rooms",function () {
+		it("should reject zips without a rooms directory - rooms", function () {
 			const invalidRoomsTypoFile = getContentFromArchives("invalid-rooms-typo.zip");
 			return (
 				facade
@@ -369,7 +367,7 @@ describe("InsightFacade", function () {
 		it("should remove single dataset", function () {
 			return facade
 				.addDataset("courses", courses, InsightDatasetKind.Courses)
-				.then((addedIDs) => {
+				.then(() => {
 					return facade.removeDataset("courses");
 				})
 				.then((removedID) => {
@@ -456,7 +454,7 @@ describe("InsightFacade", function () {
 		it("should list one dataset", function () {
 			return facade
 				.addDataset("courses", courses, InsightDatasetKind.Courses)
-				.then((addedIDs) => {
+				.then(() => {
 					return facade.listDatasets();
 				})
 				.then((insightDatasets) => {
@@ -477,7 +475,7 @@ describe("InsightFacade", function () {
 				.then(() => {
 					return facade.addDataset("courses-2", courses, InsightDatasetKind.Courses);
 				})
-				.then((addedIds) => {
+				.then(() => {
 					return facade.listDatasets();
 				})
 				.then((insightDatasets) => {
@@ -552,7 +550,7 @@ describe("InsightFacade", function () {
 					getContentFromArchives("ten-courses.zip"),
 					InsightDatasetKind.Courses
 				),
-				insightFacade.addDataset("rooms", rooms, InsightDatasetKind.Rooms)
+				insightFacade.addDataset("rooms", rooms, InsightDatasetKind.Rooms),
 			];
 
 			return Promise.all(loadDatasetPromises);

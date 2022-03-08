@@ -2,32 +2,36 @@ import {ChildNode, Element, parse} from "parse5";
 import http from "http";
 import JSZip from "jszip";
 import {InsightError} from "../IInsightFacade";
-import {IRoom, ISection} from "../interface/IKind";
+import {IRoom} from "../interface/IKind";
 import {writeSectionsAndRooms} from "./IUtility";
-import {parseJsonToCourseSections} from "./IParse";
 
 // Parses a JSZip object representing a file into rooms in buildings and writes rooms to filePath in JSON format
-export async function parseAndWriteHtmlFile(indexHtm: any, folderZip: JSZip | null, filePath: string):
-	Promise<IRoom[]> {
+export async function parseAndWriteHtmlFile(
+	indexHtm: any,
+	folderZip: JSZip | null,
+	filePath: string
+): Promise<IRoom[]> {
 	return indexHtm?.async("string").then(async (fileContent: string) => {
 		let indexDocument = parse(fileContent);
 		// DFS for table objects
 		const allPromisedRooms = parseRoomsFromIndex(indexDocument.childNodes, folderZip as JSZip);
-		return Promise.all(allPromisedRooms)
-			.then((awaitedRoomArrays) => {
-				const allActualRooms = awaitedRoomArrays.flat(1);
-				writeSectionsAndRooms(allActualRooms, filePath);
-				return Promise.resolve(allActualRooms);
-			});
+		return Promise.all(allPromisedRooms).then((awaitedRoomArrays) => {
+			const allActualRooms = awaitedRoomArrays.flat(1);
+			writeSectionsAndRooms(allActualRooms, filePath);
+			return Promise.resolve(allActualRooms);
+		});
 	});
 }
 
 // Main DFS to produce an array of Promise<IRoom[]> for multiple rooms in multiple buildings from the index.htm file
 export function parseRoomsFromIndex(nodeArray: ChildNode[], folderZip: JSZip): any[] {
 	let allPromises: any[] = [];
-	for(const childNode of nodeArray){
-		if (childNode.nodeName === "td" && "attrs" in childNode &&
-			childNode.attrs[0].value === "views-field views-field-nothing") {
+	for (const childNode of nodeArray) {
+		if (
+			childNode.nodeName === "td" &&
+			"attrs" in childNode &&
+			childNode.attrs[0].value === "views-field views-field-nothing"
+		) {
 			allPromises.push(searchForRoomsinBuilding(childNode, folderZip));
 		} else if ("childNodes" in childNode) {
 			allPromises = allPromises.concat(parseRoomsFromIndex(childNode.childNodes, folderZip));
@@ -41,7 +45,7 @@ async function searchForRoomsinBuilding(childNode: Element, folderZip: JSZip): P
 	let promisedRoomArrayForOneBuilding: IRoom[] = [];
 	// Get directory
 	let tempDirectory = "";
-	if("attrs" in childNode.childNodes[1]) {
+	if ("attrs" in childNode.childNodes[1]) {
 		tempDirectory = childNode.childNodes[1].attrs[0].value;
 	}
 	// Get parent node to get other information for 1 building
@@ -79,7 +83,7 @@ async function searchForRoomsinBuilding(childNode: Element, folderZip: JSZip): P
 				seats: parseInt(roomInfo["tempCapacity"], 10),
 				type: roomInfo["tempRoomType"],
 				furniture: roomInfo["tempFurnitureType"],
-				href: roomInfo["tempHref"]
+				href: roomInfo["tempHref"],
 			};
 			promisedRoomArrayForOneBuilding.push(room);
 		});
@@ -99,8 +103,7 @@ function extractBuildingInfo(trNode: Element): any {
 			if ("childNodes" in trChild.childNodes[1] && "value" in trChild.childNodes[1].childNodes[0]) {
 				tempFullName = trChild.childNodes[1].childNodes[0].value;
 			}
-		} else if ("attrs" in trChild &&
-			trChild.attrs[0].value === "views-field views-field-field-building-address") {
+		} else if ("attrs" in trChild && trChild.attrs[0].value === "views-field views-field-field-building-address") {
 			tempAddress = extractValue(trChild, tempShortName);
 		}
 	});
@@ -116,8 +119,8 @@ function extractValue(trChild: Element, tempShortName: string) {
 }
 
 // Helper function: returns promise of the geolocation GET request response
-function findGeolocation(tempAddress: string): Promise<any>{
-	return new Promise(function(resolve, reject) {
+function findGeolocation(tempAddress: string): Promise<any> {
+	return new Promise(function (resolve, reject) {
 		http.get(encodeURI("http://cs310.students.cs.ubc.ca:11316/api/v1/project_team573/" + tempAddress), (res) => {
 			let rawData = "";
 			res.on("data", (chunk) => {
@@ -132,7 +135,7 @@ function findGeolocation(tempAddress: string): Promise<any>{
 				}
 				return resolve(parsedData);
 			});
-		}).on("error", (e) => {
+		}).on("error", () => {
 			console.error("Got error: ${e.message}");
 		});
 	});
@@ -141,11 +144,14 @@ function findGeolocation(tempAddress: string): Promise<any>{
 // Parses an array of buildingInfo objects for multiple rooms in 1 building from the building.htm file
 function searchForBuildingInformation(nodeArray: ChildNode[], resultArray: any[]): any[] {
 	nodeArray.forEach((childNode) => {
-		if (childNode.nodeName === "td" && "attrs" in childNode &&
-			childNode.attrs[0].value === "views-field views-field-nothing") {
+		if (
+			childNode.nodeName === "td" &&
+			"attrs" in childNode &&
+			childNode.attrs[0].value === "views-field views-field-nothing"
+		) {
 			// Get directory
 			let tempHref = "";
-			if("attrs" in childNode.childNodes[1]) {
+			if ("attrs" in childNode.childNodes[1]) {
 				tempHref = childNode.childNodes[1].attrs[0].value;
 			}
 			// Get parent node to get other information for 1 building
@@ -155,17 +161,21 @@ function searchForBuildingInformation(nodeArray: ChildNode[], resultArray: any[]
 			let tempFurnitureType = "";
 			let tempRoomType = "";
 			trNode.childNodes.forEach((trChild) => {
-				if ("attrs" in trChild && trChild.attrs[0].value === "views-field views-field-field-room-number"){
+				if ("attrs" in trChild && trChild.attrs[0].value === "views-field views-field-field-room-number") {
 					if ("childNodes" in trChild.childNodes[1] && "value" in trChild.childNodes[1].childNodes[0]) {
 						tempRoomNumber = trChild.childNodes[1].childNodes[0].value;
 					}
-				} else if ("attrs" in trChild &&
-					trChild.attrs[0].value === "views-field views-field-field-room-capacity"){
+				} else if (
+					"attrs" in trChild &&
+					trChild.attrs[0].value === "views-field views-field-field-room-capacity"
+				) {
 					tempCapacity = extractValue(trChild, tempCapacity);
-				} else if ("attrs" in trChild &&
-					trChild.attrs[0].value === "views-field views-field-field-room-furniture"){
+				} else if (
+					"attrs" in trChild &&
+					trChild.attrs[0].value === "views-field views-field-field-room-furniture"
+				) {
 					tempFurnitureType = extractValue(trChild, tempFurnitureType);
-				} else if ("attrs" in trChild && trChild.attrs[0].value === "views-field views-field-field-room-type"){
+				} else if ("attrs" in trChild && trChild.attrs[0].value === "views-field views-field-field-room-type") {
 					tempRoomType = extractValue(trChild, tempRoomType);
 				}
 			});
@@ -174,7 +184,7 @@ function searchForBuildingInformation(nodeArray: ChildNode[], resultArray: any[]
 				tempCapacity,
 				tempFurnitureType,
 				tempRoomType,
-				tempHref
+				tempHref,
 			};
 			resultArray.push(buildingInfo);
 		} else if ("childNodes" in childNode) {
@@ -184,5 +194,3 @@ function searchForBuildingInformation(nodeArray: ChildNode[], resultArray: any[]
 	// Base Case
 	return resultArray;
 }
-
-
