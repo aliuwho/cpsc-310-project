@@ -1,4 +1,4 @@
-import {InsightDatasetKind, InsightError} from "../IInsightFacade";
+import {InsightError} from "../IInsightFacade";
 import {
 	checkDataset,
 	checkDir,
@@ -14,24 +14,25 @@ import {
 	checkValidSCompArg,
 	Direction,
 	hasUnderscore,
-	isCoursesField,
-	isRoomsField,
 	KeyType,
 } from "./IValidate";
+import {IElement} from "../interface/IElement";
 
 // Class to validate query structure for InsightFacade
 export class IQueryValidator {
 	private datasetName: string = "";
-	private datasetKind: string = "";
 	private groupKeys: string[];
 	private applyBlock: any;
 	private readonly columnsArray: any;
 	private readonly orderKeys: string[];
 	private dir: string = Direction.UP; // Default to ascending order
 	public readonly hasTransform: boolean;
+	private datasets: Map<string, IElement>;
+	private dataset!: IElement;
 
 	// Constructs a performQuery object
-	constructor(query: any) {
+	constructor(query: any, datasets: Map<string, IElement>) {
+		this.datasets = datasets;
 		this.checkWhereBlock(query["WHERE"]);
 
 		const optionsBlock = query["OPTIONS"];
@@ -212,13 +213,12 @@ export class IQueryValidator {
 
 			// Dataset check
 			const specifiedDatasetName = splitKey[0];
-			this.setDatasetName(specifiedDatasetName);
+			this.setDataset(specifiedDatasetName);
 			checkDataset(specifiedDatasetName, this.datasetName);
 
 			// Field check
 			const specifiedField = splitKey[1];
-			this.setDatasetKind(specifiedField);
-			checkKind(specifiedField, this.datasetKind);
+			checkKind(specifiedField, this.dataset.info.kind);
 			if (keyType === KeyType.KEY) {
 				// A valid key is a valid mkey or skey; check both
 				try {
@@ -253,28 +253,20 @@ export class IQueryValidator {
 		}
 	}
 
-	// If datasetName is not set, sets it to specifiedDatasetName
-	public setDatasetName(specifiedDatasetName: string) {
+	// If the dataset is not set, checks that the specified dataset is valid and sets the dataset.
+	private setDataset(specifiedDatasetName: string) {
 		if (this.datasetName === "") {
 			this.datasetName = specifiedDatasetName;
-		}
-	}
-
-	// If datasetKind is not set, sets it using the given field
-	public setDatasetKind(field: any) {
-		if (this.datasetKind === "") {
-			if (isCoursesField(field)) {
-				this.datasetKind = InsightDatasetKind.Courses;
-			} else if (isRoomsField(field)) {
-				this.datasetKind = InsightDatasetKind.Rooms;
-			} else {
-				throw new InsightError("Invalid field");
+			let dataset = this.datasets.get(specifiedDatasetName);
+			if (!dataset) {
+				throw new InsightError("Referenced dataset " + this.datasetName + " not added yet ");
 			}
+			this.dataset = dataset;
 		}
 	}
 
-	public getDatasetName(): string {
-		return this.datasetName;
+	public getDataset(): IElement {
+		return this.dataset;
 	}
 
 	public getDir(): string {

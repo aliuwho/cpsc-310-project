@@ -24,7 +24,8 @@ import {
 	selectFieldsFromResult,
 } from "./utility/IUtility";
 import {IQueryValidator} from "./utility/IQueryValidator";
-import {IKind, IRoom,} from "./interface/IKind";
+import {IRoom,} from "./interface/IKind";
+
 /**
  * This is the main programmatic entry point for the project.
  * Method documentation is in IInsightFacade
@@ -130,7 +131,7 @@ export default class InsightFacade implements IInsightFacade {
 
 		// parse the files in the zip under the courses directory
 		let promisedSections: any[] = [];
-		folderZip?.forEach(function(relativePath, file) {
+		folderZip?.forEach(function (relativePath, file) {
 			let sections = parseAndWriteJsonFile(file, datasetPath + "/courses/" + relativePath + ".json");
 			promisedSections = promisedSections.concat(sections);
 		});
@@ -180,14 +181,10 @@ export default class InsightFacade implements IInsightFacade {
 
 			// Check if query is valid and initialize fields
 			const tempQuery: any = query; // to have access to the keys
-			let validator = new IQueryValidator(query);
-			let dataset = this.datasets.get(validator.getDatasetName());
-			if (!dataset) {
-				throw new InsightError("Referenced dataset " + validator.getDatasetName() + " not added yet ");
-			}
+			let validator = new IQueryValidator(query, this.datasets);
 
 			// Get resulting kinds for query
-			let iPerformQuery = new IPerformQuery(dataset.kinds, tempQuery);
+			let iPerformQuery = new IPerformQuery(validator.getDataset().kinds, tempQuery);
 			let filteredKinds = iPerformQuery.getFilteredKinds();
 
 			// Perform aggregation (if applicable) and create InsightResults with specified fields
