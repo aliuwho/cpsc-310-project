@@ -232,12 +232,17 @@ export function checkExists(obj: any, name: string) {
 
 // Sort a list of InsightResults by a tuple (orderKeys) and direction using insertion sort
 export function orderResults(results: InsightResult[], orderKeys: string[], dir: string): InsightResult[] {
+	if (orderKeys.length === 0) {
+		return results;
+	}
 	// Sort by order
 	for (let i = 1; i < results.length; i++) {
 		let currentResultElement = results[i];
-		let currentVariable = currentResultElement;
 		let comparisonIndex = i - 1;
-		while (comparisonIndex >= 0 && compareResults(results[comparisonIndex], currentVariable, orderKeys, dir)) {
+		while (
+			comparisonIndex >= 0 &&
+			compareResults(currentResultElement, results[comparisonIndex], orderKeys, dir) === 1
+		) {
 			results[comparisonIndex + 1] = results[comparisonIndex];
 			comparisonIndex = comparisonIndex - 1;
 		}
