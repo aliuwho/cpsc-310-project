@@ -236,10 +236,7 @@ export function orderResults(results: InsightResult[], orderKeys: string[], dir:
 		return results;
 	}
 
-	function compareResults(
-		resultA: InsightResult,
-		resultB: InsightResult
-	): number {
+	function compareResults(resultA: InsightResult, resultB: InsightResult): number {
 		for (let key of orderKeys) {
 			let comp = compareOnKey(resultA, resultB, key, dir);
 			if (comp !== 0) {

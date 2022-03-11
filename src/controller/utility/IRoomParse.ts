@@ -55,13 +55,13 @@ async function searchForRoomsinBuilding(childNode: Element, folderZip: JSZip): P
 	const tempFullName = extractedBuildingInfo.tempFullName;
 	const tempAddress = extractedBuildingInfo.tempAddress;
 	let geoLocationObject: any = {};
-	try{
+	try {
 		geoLocationObject = await findGeolocation(tempAddress);
 	} catch (error) {
 		return Promise.resolve([]);
 	}
 
-	if("error" in geoLocationObject){
+	if ("error" in geoLocationObject) {
 		return Promise.resolve([]);
 	}
 
