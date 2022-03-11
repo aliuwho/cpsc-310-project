@@ -8,82 +8,60 @@ export class IPerformQuery {
 
 	constructor(kinds: IKind[], query: any) {
 		this.unchangedKinds = kinds;
-		this.filteredKinds = this.mainWhereFilter(query["WHERE"]);
+		this.filteredKinds = this.mainWhereFilter(query["WHERE"], this.unchangedKinds.slice());
 	}
 
 	public getFilteredKinds(): IKind[] {
 		return this.filteredKinds;
 	}
 
-	private mainWhereFilter(filterBlock: any): IKind[] {
+	private mainWhereFilter(filterBlock: any, kinds: IKind[]): IKind[] {
 		if (Object.keys(filterBlock).length === 0) {
 			// Empty WHERE block
-			return this.unchangedKinds;
+			return kinds;
 		}
 		let finalResult: IKind[] = [];
 		if (filterBlock["OR"] || filterBlock["AND"]) {
-			let collatedResultArray: IKind[][] = [];
 			if (filterBlock["OR"]) {
 				const orBlock = filterBlock["OR"];
 				for (let filter of orBlock) {
-					let filteredArray = this.mainWhereFilter(filter);
-					collatedResultArray.push(filteredArray);
+					let filteredArray = this.mainWhereFilter(filter, this.unchangedKinds.slice());
+					filteredArray = filteredArray.filter((kind) => {
+						return !finalResult.includes(kind);
+					});
+					finalResult = finalResult.concat(filteredArray);
 				}
-				finalResult = this.filterOr(collatedResultArray);
 			} else {
+				finalResult = kinds.slice();
 				const andBlock = filterBlock["AND"];
 				for (let filter of andBlock) {
-					let filteredArray = this.mainWhereFilter(filter);
-					collatedResultArray.push(filteredArray);
+					let filteredArray = this.mainWhereFilter(filter, finalResult);
+					finalResult = finalResult.filter((kind) => {
+						return filteredArray.includes(kind);
+					});
 				}
-				finalResult = this.filterAnd(collatedResultArray);
 			}
 		} else if (filterBlock["LT"] || filterBlock["EQ"] || filterBlock["GT"]) {
 			// M Comparison
-			finalResult = this.mComparison(filterBlock);
+			finalResult = this.mComparison(filterBlock, kinds);
 		} else if (filterBlock["IS"]) {
 			// S Comparison
-			finalResult = this.sComparison(filterBlock);
+			finalResult = this.sComparison(filterBlock, kinds);
 		} else if (filterBlock["NOT"]) {
 			// Negation
 			const negBlock = filterBlock["NOT"];
 			let toBeExcludedArray: IKind[];
-			toBeExcludedArray = this.mainWhereFilter(negBlock);
+			toBeExcludedArray = this.mainWhereFilter(negBlock, kinds.slice());
 			// Remove the originally filtered kinds in NegBlock content (for negation):
 			// https://stackoverflow.com/questions/19957348/remove-all-elements-contained-in-another-array
-			finalResult = this.unchangedKinds.filter((kind) => {
+			finalResult = kinds.filter((kind) => {
 				return !toBeExcludedArray.includes(kind);
 			});
 		}
 		return finalResult;
 	}
 
-	private filterOr(collatedResultArray: IKind[][]): IKind[] {
-		let finalArray: IKind[] = [];
-		for (let currentArray of collatedResultArray) {
-			finalArray = finalArray.concat(currentArray);
-		}
-		for (let i = 0; i < finalArray.length; ++i) {
-			for (let j = i + 1; j < finalArray.length; ++j) {
-				if (finalArray[i] === finalArray[j]) {
-					finalArray.splice(j--, 1);
-				}
-			}
-		}
-		return finalArray;
-	}
-
-	private filterAnd(collatedResultArray: IKind[][]): IKind[] {
-		let finalArray = collatedResultArray[0];
-		for (let i = 1; i < collatedResultArray.length; i++) {
-			finalArray = finalArray.filter((kind) => {
-				return collatedResultArray[i].includes(kind);
-			});
-		}
-		return finalArray;
-	}
-
-	private sComparison(filterBlock: any): IKind[] {
+	private sComparison(filterBlock: any, kinds: IKind[]): IKind[] {
 		const sComBlock = filterBlock["IS"];
 		// Getting individual values
 		const filterKey = Object.keys(sComBlock);
@@ -91,7 +69,7 @@ export class IPerformQuery {
 		const splitKey = filterKeyString.split("_");
 		const specificFieldKey = splitKey[1]; // one out of nine field keys
 		const filterValue = sComBlock[filterKeyString]; // field value
-		return this.unchangedKinds.filter((kind: any) => {
+		return kinds.filter((kind: any) => {
 			return this.sCompFilterValueMatching(filterValue, kind, specificFieldKey);
 		});
 	}
@@ -111,7 +89,7 @@ export class IPerformQuery {
 		}
 	}
 
-	private mComparison(filterBlock: any): IKind[] {
+	private mComparison(filterBlock: any, kinds: IKind[]): IKind[] {
 		let mComBlock: any;
 		if (filterBlock["LT"]) {
 			mComBlock = filterBlock["LT"];
@@ -126,12 +104,12 @@ export class IPerformQuery {
 		const splitKey = filterKeyString.split("_");
 		const specificFieldKey = splitKey[1]; // one out of nine field keys
 		const filterValue = mComBlock[filterKeyString]; // field value
-		return this.mComparisonFilter(filterBlock, specificFieldKey, filterValue);
+		return this.mComparisonFilter(filterBlock, specificFieldKey, filterValue, kinds);
 	}
 
-	private mComparisonFilter(filterBlock: any, specificFieldKey: string, filterValue: any) {
+	private mComparisonFilter(filterBlock: any, specificFieldKey: string, filterValue: any, kinds: IKind[]) {
 		// New array
-		return this.unchangedKinds.filter((item: any) => {
+		return kinds.filter((item: any) => {
 			if (specificFieldKey in item) {
 				if (filterBlock["LT"]) {
 					return item[specificFieldKey] < filterValue;
