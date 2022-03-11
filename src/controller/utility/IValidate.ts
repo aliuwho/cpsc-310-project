@@ -235,61 +235,48 @@ export function orderResults(results: InsightResult[], orderKeys: string[], dir:
 	if (orderKeys.length === 0) {
 		return results;
 	}
-	// Sort by order
-	for (let i = 1; i < results.length; i++) {
-		let currentResultElement = results[i];
-		let comparisonIndex = i - 1;
-		while (
-			comparisonIndex >= 0 &&
-			compareResults(currentResultElement, results[comparisonIndex], orderKeys, dir) === 1
-		) {
-			results[comparisonIndex + 1] = results[comparisonIndex];
-			comparisonIndex = comparisonIndex - 1;
+
+	function compareResults(
+		resultA: InsightResult,
+		resultB: InsightResult
+	): number {
+		for (let key of orderKeys) {
+			let comp = compareOnKey(resultA, resultB, key, dir);
+			if (comp !== 0) {
+				return comp;
+			}
 		}
-		results[comparisonIndex + 1] = currentResultElement;
+		return 0;
 	}
+
+	results.sort(compareResults);
 	return results;
 }
 
-// Given a direction and orderKeys, returns:
-// 	1	 if A comes before B
+// Given a direction and a key, returns:
+// 	1	 if A comes after B
 // 	0	 if A is tied with B
-// -1	 if A comes after B
-export function compareResults(
-	resultA: InsightResult,
-	resultB: InsightResult,
-	orderKeys: string[],
-	dir: string
-): number {
-	if (orderKeys.length === 1) {
-		let key = orderKeys[0];
-		if (resultA[key] === resultB[key]) {
-			return 0;
-		}
-		switch (dir) {
-			case Direction.UP:
-				// A before B iff A < B
-				if (resultA[key] < resultB[key]) {
-					return 1;
-				} else {
-					return -1;
-				}
-			case Direction.DOWN:
-				// A before B iff A > B
-				if (resultA[key] > resultB[key]) {
-					return 1;
-				} else {
-					return -1;
-				}
-			default:
-				throw new InsightError("Invalid DIRECTION");
-		}
-	} else {
-		let firstKeyComparison = compareResults(resultA, resultB, [orderKeys[0]], dir);
-		if (firstKeyComparison !== 0) {
-			return compareResults(resultA, resultB, orderKeys.splice(1), dir);
-		} else {
-			return firstKeyComparison;
-		}
+// -1	 if A comes before B
+function compareOnKey(resultA: InsightResult, resultB: InsightResult, key: string, dir: string): number {
+	if (resultA[key] === resultB[key]) {
+		return 0;
+	}
+	switch (dir) {
+		case Direction.UP:
+			// A before B iff A < B
+			if (resultA[key] < resultB[key]) {
+				return -1;
+			} else {
+				return 1;
+			}
+		case Direction.DOWN:
+			// A before B iff A > B
+			if (resultA[key] > resultB[key]) {
+				return -1;
+			} else {
+				return 1;
+			}
+		default:
+			throw new InsightError("Invalid DIRECTION");
 	}
 }
