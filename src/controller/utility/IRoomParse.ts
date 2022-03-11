@@ -54,7 +54,16 @@ async function searchForRoomsinBuilding(childNode: Element, folderZip: JSZip): P
 	const tempShortName = extractedBuildingInfo.tempShortName;
 	const tempFullName = extractedBuildingInfo.tempFullName;
 	const tempAddress = extractedBuildingInfo.tempAddress;
-	const geoLocationObject = await findGeolocation(tempAddress);
+	let geoLocationObject: any = {};
+	try{
+		geoLocationObject = await findGeolocation(tempAddress);
+	} catch (error) {
+		return Promise.resolve([]);
+	}
+
+	if("error" in geoLocationObject){
+		return Promise.resolve([]);
+	}
 
 	// Using JSZip to access files for additional information
 	// Access the files
@@ -137,6 +146,7 @@ function findGeolocation(tempAddress: string): Promise<any> {
 			});
 		}).on("error", () => {
 			console.error("Got error: ${e.message}");
+			return reject("dummy");
 		});
 	});
 }
