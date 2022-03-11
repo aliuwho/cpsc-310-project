@@ -17,6 +17,7 @@ import {
 	KeyType,
 } from "./IValidate";
 import {IElement} from "../interface/IElement";
+import {throwNonInsightError} from "./IUtility";
 
 // Class to validate query structure for InsightFacade
 export class IQueryValidator {
@@ -64,13 +65,10 @@ export class IQueryValidator {
 			// Check if WHERE is empty
 			checkObjectLength(whereBlock, 0, "WHERE");
 		} catch (error) {
-			if (error instanceof InsightError) {
-				// WHERE should only have 1 arg
-				checkObjectLength(whereBlock, 1, "WHERE");
-				this.checkFilterBlock(whereBlock);
-			} else {
-				throw error;
-			}
+			throwNonInsightError(error);
+			// WHERE should only have 1 arg
+			checkObjectLength(whereBlock, 1, "WHERE");
+			this.checkFilterBlock(whereBlock);
 		}
 	}
 
@@ -86,8 +84,8 @@ export class IQueryValidator {
 			});
 		} else if (block["LT"] || block["EQ"] || block["GT"]) {
 			// M Comparison
-			checkObjectLength(block, 1, "LT/GT/EQ");
 			let filterKey = Object.keys(block)[0];
+			checkObjectLength(block, 1, filterKey);
 			let mCompObj = block[filterKey];
 			checkObjectLength(mCompObj, 1, "MCOMP");
 			let mKey = Object.keys(mCompObj)[0];
@@ -224,11 +222,8 @@ export class IQueryValidator {
 				try {
 					checkField(specifiedField, KeyType.M_KEY);
 				} catch (error) {
-					if (error instanceof InsightError) {
-						checkField(specifiedField, KeyType.S_KEY);
-					} else {
-						throw error;
-					}
+					throwNonInsightError(error);
+					checkField(specifiedField, KeyType.S_KEY);
 				}
 			} else {
 				checkField(specifiedField, keyType);
@@ -238,11 +233,8 @@ export class IQueryValidator {
 			try {
 				this.checkValidKey(key, KeyType.KEY);
 			} catch (error) {
-				if (error instanceof InsightError) {
-					this.checkValidKey(key, KeyType.APPLY_KEY);
-				} else {
-					throw error;
-				}
+				throwNonInsightError(error);
+				this.checkValidKey(key, KeyType.APPLY_KEY);
 			}
 		} else if (keyType === KeyType.APPLY_KEY) {
 			if (hasUnderscore(key)) {

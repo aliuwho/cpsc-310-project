@@ -1,6 +1,6 @@
 import fs from "fs";
 import {IElement} from "../interface/IElement";
-import {InsightDataset, InsightResult} from "../IInsightFacade";
+import {InsightDataset, InsightError, InsightResult} from "../IInsightFacade";
 import {IKind} from "../interface/IKind";
 import {ApplyToken} from "./IValidate";
 import Decimal from "decimal.js";
@@ -149,5 +149,12 @@ function applyTokenToGroup(applyToken: string, field: string, kinds: IKind[]): a
 			}
 		}
 		return uniqueValues;
+	}
+}
+
+// Throws err if it is not an InsightError
+export function throwNonInsightError(err: unknown) {
+	if (!(err instanceof InsightError)) {
+		throw err;
 	}
 }
