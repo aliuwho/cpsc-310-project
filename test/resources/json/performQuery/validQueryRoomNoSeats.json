@@ -1,0 +1,22 @@
+{
+	"title": "test no seats",
+	"input": {
+		"WHERE": {
+			"IS": {
+				"no-seat-rooms_shortname": "WOOD"
+			}
+		},
+		"OPTIONS": {
+			"COLUMNS": [
+				"no-seat-rooms_fullname",
+				"no-seat-rooms_seats",
+				"no-seat-rooms_type",
+				"no-seat-rooms_furniture",
+				"no-seat-rooms_href"
+			]
+		}
+	},
+	"errorExpected": false,
+	"verbose": false,
+	"expected": [{"no-seat-rooms_fullname":"Woodward (Instructional Resources Centre-IRC)","no-seat-rooms_seats":0,"no-seat-rooms_type":"Tiered Large Group","no-seat-rooms_furniture":"Classroom-Fixed Tables/Movable Chairs","no-seat-rooms_href":"http://students.ubc.ca/campus/discover/buildings-and-classrooms/room/WOOD-1"},{"no-seat-rooms_fullname":"Woodward (Instructional Resources Centre-IRC)","no-seat-rooms_seats":0,"no-seat-rooms_type":"Tiered Large Group","no-seat-rooms_furniture":"Classroom-Fixed Tablets","no-seat-rooms_href":"http://students.ubc.ca/campus/discover/buildings-and-classrooms/room/WOOD-2"},{"no-seat-rooms_fullname":"Woodward (Instructional Resources Centre-IRC)","no-seat-rooms_seats":0,"no-seat-rooms_type":"Tiered Large Group","no-seat-rooms_furniture":"Classroom-Fixed Tables/Movable Chairs","no-seat-rooms_href":"http://students.ubc.ca/campus/discover/buildings-and-classrooms/room/WOOD-3"}]
+}
