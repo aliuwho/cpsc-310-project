@@ -155,8 +155,7 @@ function findGeolocation(tempAddress: string): Promise<any> {
 function searchForBuildingInformation(nodeArray: ChildNode[], resultArray: any[]): any[] {
 	nodeArray.forEach((childNode) => {
 		if (
-			childNode.nodeName === "td" &&
-			"attrs" in childNode &&
+			childNode.nodeName === "td" && "attrs" in childNode &&
 			childNode.attrs[0].value === "views-field views-field-nothing"
 		) {
 			// Get directory
@@ -193,11 +192,7 @@ function searchForBuildingInformation(nodeArray: ChildNode[], resultArray: any[]
 				}
 			});
 			let buildingInfo = {
-				tempRoomNumber,
-				tempCapacity,
-				tempFurnitureType,
-				tempRoomType,
-				tempHref,
+				tempRoomNumber, tempCapacity, tempFurnitureType, tempRoomType, tempHref
 			};
 			resultArray.push(buildingInfo);
 		} else if ("childNodes" in childNode) {
