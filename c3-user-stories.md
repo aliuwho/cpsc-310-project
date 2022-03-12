@@ -1,26 +1,29 @@
-Please edit this template and commit to the master branch for your user stories submission.   
-Make sure to follow the *Role, Goal, Benefit* framework for the user stories and the *Given/When/Then* framework for the Definitions of Done! You can also refer to the examples DoDs in [C3 spec](https://sites.google.com/view/ubc-cpsc310-21w2-intro-to-se/project/checkpoint-3).
-
 ## User Story 1
-As a \<role\>, I want to \<goal\>, so that \<benefit\>.
+As a user, I want to be able to view information about the datasets in the system, so that I can access and understand a valid dataset for my queries.
 
 
 #### Definitions of Done(s)
-Scenario 1: \<The name for the behaviour that will be described\>  
-Given: \<Some initial application state (precondition)\>  
-When: \<The user do some series of action\>  
-Then: \<Some outcome state is expected (post-condition)\>
+Scenario 1: Happy Path
+Given: The user is on the main page
+When: The user clicks the "View Datasets" button
+Then: The names, kinds, and number of rows of the datasets should be displayed in a table format
+
+Scenario 2: API calls fail
+Given: The user is on the main page
+When: The InsightFacade API fails (timeout, network connections, etc)
+Then: An error message will be displayed with some description of the problem
+
 
 ## User Story 2
-As a \<role\>, I want to \<goal\>, so that \<benefit\>.
-
+As a professor, I want to be able to check my course averages from a given year to the current year, so that I can gauge the effectiveness of my teaching over the years.
 
 #### Definitions of Done(s)
-Scenario 1: \<The name for the behaviour that will be described\>  
-Given: \<Some initial application state (precondition)\>  
-When: \<The user do some series of action\>  
-Then: \<Some outcome state is expected (post-condition)\>
+Scenario 1: Valid query
+Given: The professor is on the query page
+When: The user has a valid typed query in the text box and clicks the “Submit Query” button
+Then: The corresponding results will be displayed in a table format in the results area of the page.
 
-## Others
-You may provide any additional user stories + DoDs in this section for general TA feedback.  
-Note: These will not be graded.
+Scenario 2: Invalid query
+Given: The professor is on the query page
+When: The user has an invalid typed query in the text box and clicks the “Submit Query” button
+Then: The corresponding error will be displayed as text with some description of what went wrong in the results area of the page.
