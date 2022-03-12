@@ -551,6 +551,10 @@ describe("InsightFacade", function () {
 					InsightDatasetKind.Courses
 				),
 				insightFacade.addDataset("rooms", rooms, InsightDatasetKind.Rooms),
+				insightFacade.addDataset(
+					"no-seat-rooms",
+					getContentFromArchives("valid-rooms-no-seats.zip"),
+					InsightDatasetKind.Rooms),
 			];
 
 			return Promise.all(loadDatasetPromises);

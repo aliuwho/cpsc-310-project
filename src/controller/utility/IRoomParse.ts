@@ -85,7 +85,7 @@ async function searchForRoomsinBuilding(childNode: Element, folderZip: JSZip): P
 				fullname: tempFullName,
 				shortname: tempShortName,
 				number: roomInfo["tempRoomNumber"],
-				name: tempShortName + roomInfo["tempRoom"],
+				name: tempShortName + "_" + roomInfo["tempRoomNumber"],
 				address: tempAddress,
 				lat: geoLocationObject["lat"],
 				lon: geoLocationObject["lon"],
@@ -180,6 +180,9 @@ function searchForBuildingInformation(nodeArray: ChildNode[], resultArray: any[]
 					trChild.attrs[0].value === "views-field views-field-field-room-capacity"
 				) {
 					tempCapacity = extractValue(trChild, tempCapacity);
+					if(!tempCapacity){
+						tempCapacity = "0";
+					}
 				} else if (
 					"attrs" in trChild &&
 					trChild.attrs[0].value === "views-field views-field-field-room-furniture"
