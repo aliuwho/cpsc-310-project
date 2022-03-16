@@ -1,0 +1,54 @@
+{
+	"title": "query where an apply key does not match a field throws an InsightError",
+	"input": {
+		"WHERE": {
+			"GT": {
+				"courses_avg": 30
+			}
+		},
+		"OPTIONS": {
+			"COLUMNS": [
+				"numInstructors",
+				"avgAvg",
+				"minId",
+				"maxYear"
+			],
+			"ORDER": {
+				"dir": "UP",
+				"keys": [
+					"avgAvg"
+				]
+			}
+		},
+		"TRANSFORMATIONS": {
+			"GROUP": [
+				"courses_title"
+			],
+			"APPLY": [
+				{
+					"numInstructors": {
+						"COUNT": "courses_instructor"
+					}
+				},
+				{
+					"avgAvg": {
+						"AVG": "courses_avg"
+					}
+				},
+				{
+					"minId": {
+						"MIN": "courses_id"
+					}
+				},
+				{
+					"maxYear": {
+						"MAX": "courses_year"
+					}
+				}
+			]
+		}
+	},
+	"errorExpected": true,
+	"verbose": false,
+	"expected": "InsightError"
+}

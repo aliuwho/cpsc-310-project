@@ -1,0 +1,91 @@
+{
+	"title": "query where an apply key counts rooms m fields and s fields",
+	"input": {
+		"WHERE": {},
+		"OPTIONS": {
+			"COLUMNS": [
+				"rooms_furniture",
+				"numLon",
+				"numSeats"
+			],
+			"ORDER": {
+				"dir": "DOWN",
+				"keys": [
+					"numLon",
+					"numSeats"
+				]
+			}
+		},
+		"TRANSFORMATIONS": {
+			"GROUP": [
+				"rooms_furniture"
+			],
+			"APPLY": [
+				{
+					"numLon": {
+						"COUNT": "rooms_lon"
+					}
+				},
+				{
+					"numSeats": {
+						"COUNT": "rooms_seats"
+					}
+				}
+			]
+		}
+	},
+	"errorExpected": false,
+	"verbose": false,
+	"expected": [
+		{
+			"rooms_furniture": "Classroom-Movable Tables & Chairs",
+			"numLon": 34,
+			"numSeats": 40
+		},
+		{
+			"rooms_furniture": "Classroom-Fixed Tables/Movable Chairs",
+			"numLon": 24,
+			"numSeats": 37
+		},
+		{
+			"rooms_furniture": "Classroom-Fixed Tablets",
+			"numLon": 17,
+			"numSeats": 27
+		},
+		{
+			"rooms_furniture": "Classroom-Movable Tablets",
+			"numLon": 11,
+			"numSeats": 18
+		},
+		{
+			"rooms_furniture": "Classroom-Moveable Tables & Chairs",
+			"numLon": 7,
+			"numSeats": 10
+		},
+		{
+			"rooms_furniture": "Classroom-Fixed Tables/Fixed Chairs",
+			"numLon": 7,
+			"numSeats": 9
+		},
+		{
+			"rooms_furniture": "Classroom-Hybrid Furniture",
+			"numLon": 2,
+			"numSeats": 6
+		},
+		{
+			"rooms_furniture": "Classroom-Learn Lab",
+			"numLon": 2,
+			"numSeats": 3
+		},
+		{
+			"rooms_furniture": "Classroom-Fixed Tables/Moveable Chairs",
+			"numLon": 1,
+			"numSeats": 2
+		},
+		{
+			"rooms_furniture": "Classroom-Moveable Tablets",
+			"numLon": 1,
+			"numSeats": 1
+		}
+	]
+}

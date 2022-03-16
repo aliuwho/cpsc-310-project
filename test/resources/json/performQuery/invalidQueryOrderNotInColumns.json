@@ -1,0 +1,54 @@
+{
+	"title": "query where a key in order is not in columns throws InsightError",
+	"input": {
+		"WHERE": {
+			"GT": {
+				"rooms_seats": 100
+			}
+		},
+		"OPTIONS": {
+			"COLUMNS": [
+				"numSeats",
+				"avgLat",
+				"minNumber",
+				"maxLon"
+			],
+			"ORDER": {
+				"dir": "DOWN",
+				"keys": [
+					"rooms_type"
+				]
+			}
+		},
+		"TRANSFORMATIONS": {
+			"GROUP": [
+				"rooms_type"
+			],
+			"APPLY": [
+				{
+					"numSeats": {
+						"COUNT": "rooms_seats"
+					}
+				},
+				{
+					"avgLat": {
+						"AVG": "rooms_lat"
+					}
+				},
+				{
+					"minNumber": {
+						"MIN": "rooms_number"
+					}
+				},
+				{
+					"maxLon": {
+						"MAX": "rooms_lon"
+					}
+				}
+			]
+		}
+	},
+	"errorExpected": true,
+	"verbose": false,
+	"expected": "InsightError"
+}
