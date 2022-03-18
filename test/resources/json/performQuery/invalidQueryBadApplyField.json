@@ -1,5 +1,5 @@
 {
-	"title": "query where 2 apply rules have the same applykey should throw InsightError",
+	"title": "query where an invalid apply key throws an InsightError",
 	"input": {
 		"WHERE": {
 			"AND": [

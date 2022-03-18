@@ -148,7 +148,7 @@ function applyTokenToGroup(applyToken: string, field: string, kinds: IKind[]): a
 				uniqueValues.set(value, 1);
 			}
 		}
-		return uniqueValues;
+		return uniqueValues.size;
 	}
 }
 

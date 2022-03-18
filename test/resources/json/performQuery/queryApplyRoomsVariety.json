@@ -1,0 +1,79 @@
+{
+	"title": "query for rooms with all the apply tokens",
+	"input": {
+		"WHERE": {
+			"GT": {
+				"rooms_seats": 100
+			}
+		},
+		"OPTIONS": {
+			"COLUMNS": [
+				"numSeats",
+				"avgLat",
+				"minLat",
+				"maxLon"
+			],
+			"ORDER": {
+				"dir": "DOWN",
+				"keys": [
+					"numSeats"
+				]
+			}
+		},
+		"TRANSFORMATIONS": {
+			"GROUP": [
+				"rooms_type"
+			],
+			"APPLY": [
+				{
+					"numSeats": {
+						"COUNT": "rooms_seats"
+					}
+				},
+				{
+					"avgLat": {
+						"AVG": "rooms_lat"
+					}
+				},
+				{
+					"minLat": {
+						"MIN": "rooms_lat"
+					}
+				},
+				{
+					"maxLon": {
+						"MAX": "rooms_lon"
+					}
+				}
+			]
+		}
+	},
+	"errorExpected": false,
+	"verbose": false,
+	"expected": [
+		{
+			"numSeats": 37,
+			"avgLat": 49.26,
+			"minLat": 49.26044,
+			"maxLon": -123.24342
+		},
+		{
+			"numSeats": 2,
+			"avgLat": 49.26,
+			"minLat": 49.26047,
+			"maxLon": -123.24467
+		},
+		{
+			"numSeats": 1,
+			"avgLat": 49.27,
+			"minLat": 49.26826,
+			"maxLon": -123.25468
+		},
+		{
+			"numSeats": 1,
+			"avgLat": 49.27,
+			"minLat": 49.2683,
+			"maxLon": -123.24894
+		}
+	]
+}
