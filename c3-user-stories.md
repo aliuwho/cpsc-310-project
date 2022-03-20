@@ -1,29 +1,30 @@
 ## User Story 1
-As a user, I want to be able to view information about the datasets in the system, so that I can access and understand a valid dataset for my queries.
+As an academic administrator, I want to remove a dataset, so that I can get rid of datasets that are not useful or are outdated and save storage space.
 
 
 #### Definitions of Done(s)
-Scenario 1: Happy Path
+Scenario 1: Valid Dataset
 Given: The user is on the main page
-When: The user clicks the "View Datasets" button
-Then: The names, kinds, and number of rows of the datasets should be displayed in a table format
+When: The user enters a dataset that is in the system and clicks the "Remove Dataset" button
+Then: A success message including the name of the dataset should be displayed. Any consecutive queries on the removed dataset should not be successful.
 
-Scenario 2: API calls fail
+Scenario 2: Invalid Dataset
 Given: The user is on the main page
-When: The InsightFacade API fails (timeout, network connections, etc)
-Then: An error message will be displayed with some description of the problem
+When: The user enters a dataset that is not in the system and clicks the "Remove Dataset" button
+Then: An error message will be displayed with some description of the problem.
 
 
 ## User Story 2
-As a professor, I want to be able to check my course averages from a given year to the current year, so that I can gauge the effectiveness of my teaching over the years.
+As the dean of a department, I want to be able to check the course averages in a dataset for my department from a given year to the current year, so that I can gauge the effectiveness of professors’ teaching over the years.
 
 #### Definitions of Done(s)
-Scenario 1: Valid query
-Given: The professor is on the query page
-When: The user has a valid typed query in the text box and clicks the “Submit Query” button
-Then: The corresponding results will be displayed in a table format in the results area of the page.
+Scenario 1: Valid Dataset ID
+Given: The dean is on the query page
+When: The user enters a valid dataset id, starting year, and a course dept and clicks the “Submit Query” button
+Then: The corresponding result (an average) will be displayed in the results area of the page.
 
-Scenario 2: Invalid query
-Given: The professor is on the query page
-When: The user has an invalid typed query in the text box and clicks the “Submit Query” button
-Then: The corresponding error will be displayed as text with some description of what went wrong in the results area of the page.
+Scenario 2: Valid Dataset ID
+Given: The dean is on the query page
+When: The user enters an invalid dataset id, starting year, and a course dept and clicks the “Submit Query” button
+Then: The corresponding error will be displayed as text with some description of the error in the results area of the page.
+
