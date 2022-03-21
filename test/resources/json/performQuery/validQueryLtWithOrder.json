@@ -1,5 +1,5 @@
 {
-  "title": "valid query with LT",
+  "title": "valid query with LT with order",
   "input": {
     "WHERE": {
       "LT": {

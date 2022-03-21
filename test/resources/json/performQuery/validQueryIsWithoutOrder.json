@@ -1,0 +1,20 @@
+{
+  "title": "query where IS returns matches without order",
+  "input": {
+    "WHERE": {
+      "IS": {
+        "courses_title": "meteor of storms"
+      }
+    },
+    "OPTIONS": {
+      "COLUMNS": [
+        "courses_dept",
+        "courses_id",
+        "courses_title"
+      ]
+	}
+  },
+  "errorExpected": false,
+  "verbose": false,
+  "expected": [{"courses_dept":"atsc","courses_id":"201","courses_title":"meteor of storms"},{"courses_dept":"atsc","courses_id":"201","courses_title":"meteor of storms"},{"courses_dept":"atsc","courses_id":"201","courses_title":"meteor of storms"},{"courses_dept":"atsc","courses_id":"201","courses_title":"meteor of storms"},{"courses_dept":"atsc","courses_id":"201","courses_title":"meteor of storms"},{"courses_dept":"atsc","courses_id":"201","courses_title":"meteor of storms"},{"courses_dept":"atsc","courses_id":"201","courses_title":"meteor of storms"},{"courses_dept":"atsc","courses_id":"201","courses_title":"meteor of storms"},{"courses_dept":"atsc","courses_id":"201","courses_title":"meteor of storms"},{"courses_dept":"atsc","courses_id":"201","courses_title":"meteor of storms"},{"courses_dept":"atsc","courses_id":"201","courses_title":"meteor of storms"},{"courses_dept":"atsc","courses_id":"201","courses_title":"meteor of storms"},{"courses_dept":"atsc","courses_id":"201","courses_title":"meteor of storms"},{"courses_dept":"atsc","courses_id":"201","courses_title":"meteor of storms"},{"courses_dept":"atsc","courses_id":"201","courses_title":"meteor of storms"},{"courses_dept":"atsc","courses_id":"201","courses_title":"meteor of storms"},{"courses_dept":"atsc","courses_id":"201","courses_title":"meteor of storms"},{"courses_dept":"atsc","courses_id":"201","courses_title":"meteor of storms"}]
+}

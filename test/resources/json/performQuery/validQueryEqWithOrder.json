@@ -1,0 +1,21 @@
+{
+  "title": "valid query with EQ with order",
+  "input": {
+	  "WHERE": {
+		  "EQ": {
+			  "courses_avg": 97
+		  }
+	  },
+	  "OPTIONS": {
+		  "COLUMNS": [
+			  "courses_dept",
+			  "courses_avg",
+			  "courses_id"
+		  ],
+		  "ORDER": "courses_id"
+	  }
+  },
+  "errorExpected": false,
+  "verbose": false,
+  "expected": [{"courses_dept":"epse","courses_avg":97,"courses_id":"534"},{"courses_dept":"psyc","courses_avg":97,"courses_id":"549"},{"courses_dept":"crwr","courses_avg":97,"courses_id":"599"}]
+}
