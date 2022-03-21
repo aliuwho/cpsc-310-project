@@ -1,11 +1,13 @@
 import express, {Application, Request, Response} from "express";
 import * as http from "http";
 import cors from "cors";
+import InsightFacade from "../controller/InsightFacade";
 
 export default class Server {
 	private readonly port: number;
 	private express: Application;
 	private server: http.Server | undefined;
+	private static insightFacade: InsightFacade;
 
 	constructor(port: number) {
 		console.info(`Server::<init>( ${port} )`);
@@ -15,10 +17,13 @@ export default class Server {
 		this.registerMiddleware();
 		this.registerRoutes();
 
+		Server.insightFacade = new InsightFacade();
+		// this.express.bind(Server.insightFacade);
+
 		// NOTE: you can serve static frontend files in from your express server
 		// by uncommenting the line below. This makes files in ./frontend/public
 		// accessible at http://localhost:<port>/
-		// this.express.use(express.static("./frontend/public"))
+		this.express.use(express.static("./frontend/public"));
 	}
 
 	/**
@@ -87,6 +92,34 @@ export default class Server {
 		this.express.get("/echo/:msg", Server.echo);
 
 		// TODO: your other endpoints should go here
+		this.express.delete("/dataset/:id", Server.deleteHandler); // Remove datasets endpoint
+		this.express.get("/datasets", Server.getHandler); // List datasets endpoint
+	}
+
+	// Responds to a delete request
+	private static async deleteHandler(req: Request, res: Response): Promise<void> {
+		try {
+			console.log(`Server::delete(..) - params: ${JSON.stringify(req.params)}`);
+			const response = await Server.insightFacade.removeDataset(req.params.id);
+			res.status(200).json({result: response});
+		} catch (err) {
+			console.log(`error occurred in delete: ${err}`);
+			res.status(400).json({error: err});
+		}
+	}
+
+	// Responds to a get request
+	private static async getHandler(req: Request, res: Response): Promise<void> {
+		// Do something
+		try {
+			console.log(`Server::get(..) - params: ${JSON.stringify(req.params)}`);
+			const response = await Server.insightFacade.listDatasets();
+			console.log(`${response}`);
+			res.status(200).json({result: response});
+		} catch (err) {
+			console.log(`error occurred in get: ${err}`);
+			res.status(400).json({error: err});
+		}
 	}
 
 	// The next two methods handle the echo service.
