@@ -7,7 +7,7 @@ export default class Server {
 	private readonly port: number;
 	private express: Application;
 	private server: http.Server | undefined;
-	private static insightFacade: InsightFacade;
+	private insightFacade: InsightFacade;
 
 	constructor(port: number) {
 		console.info(`Server::<init>( ${port} )`);
@@ -17,7 +17,7 @@ export default class Server {
 		this.registerMiddleware();
 		this.registerRoutes();
 
-		Server.insightFacade = new InsightFacade();
+		this.insightFacade = new InsightFacade();
 		// this.express.bind(Server.insightFacade);
 
 		// NOTE: you can serve static frontend files in from your express server
@@ -92,15 +92,15 @@ export default class Server {
 		this.express.get("/echo/:msg", Server.echo);
 
 		// TODO: your other endpoints should go here
-		this.express.delete("/dataset/:id", Server.deleteHandler); // Remove datasets endpoint
-		this.express.get("/datasets", Server.getHandler); // List datasets endpoint
+		this.express.delete("/dataset/:id", this.deleteHandler.bind(this)); // Remove datasets endpoint
+		this.express.get("/datasets", this.getHandler.bind(this)); // List datasets endpoint
 	}
 
 	// Responds to a delete request
-	private static async deleteHandler(req: Request, res: Response): Promise<void> {
+	private async deleteHandler(req: Request, res: Response): Promise<void> {
 		try {
 			console.log(`Server::delete(..) - params: ${JSON.stringify(req.params)}`);
-			const response = await Server.insightFacade.removeDataset(req.params.id);
+			const response = await this.insightFacade.removeDataset(req.params.id);
 			res.status(200).json({result: response});
 		} catch (err) {
 			console.log(`error occurred in delete: ${err}`);
@@ -109,11 +109,11 @@ export default class Server {
 	}
 
 	// Responds to a get request
-	private static async getHandler(req: Request, res: Response): Promise<void> {
+	private async getHandler(req: Request, res: Response): Promise<void> {
 		// Do something
 		try {
 			console.log(`Server::get(..) - params: ${JSON.stringify(req.params)}`);
-			const response = await Server.insightFacade.listDatasets();
+			const response = await this.insightFacade.listDatasets();
 			console.log(`${response}`);
 			res.status(200).json({result: response});
 		} catch (err) {
