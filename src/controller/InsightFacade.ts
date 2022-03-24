@@ -12,7 +12,7 @@ import * as fse from "fs-extra";
 import JSZip from "jszip";
 import {IElement} from "./interface/IElement";
 import {parseAndWriteHtmlFile} from "./utility/IRoomParse";
-import {parseAndWriteJsonFile} from "./utility/IParse";
+import {parseJsonFile} from "./utility/IParse";
 import {IPerformQuery} from "./utility/IPerformQuery";
 import {hasUnderscore, nonWhitespace, orderResults} from "./utility/IValidate";
 import {
@@ -21,10 +21,11 @@ import {
 	createResultsWithSpecifiedFields,
 	getDatasets,
 	getKeys,
-	selectFieldsFromResult,
+	selectFieldsFromResult, writeSectionsAndRooms,
 } from "./utility/IUtility";
 import {IQueryValidator} from "./utility/IQueryValidator";
 import {IRoom} from "./interface/IKind";
+import {existsSync, readdirSync, readFileSync} from "fs";
 
 /**
  * This is the main programmatic entry point for the project.
@@ -36,7 +37,46 @@ export default class InsightFacade implements IInsightFacade {
 
 	constructor() {
 		this.datasets = new Map();
+		this.loadDataOnFacadeDataset();
 		console.log("InsightFacadeImpl::init()");
+	}
+
+	private loadDataOnFacadeDataset() {
+		const basicDir = "./data";
+		if (existsSync(basicDir)) {
+			// read from the data folder (add back all the data) - readdirSync
+			const dataNames = readdirSync(basicDir);
+			for (const name of dataNames) {
+				const dataInsightDatasetKind = readdirSync(basicDir + "/" + name)[0];
+				if (dataInsightDatasetKind === "courses") {
+					const datasetJsonFileName = readdirSync(basicDir + "/" + name + "/courses")[0];
+					const fullJsonFileName = basicDir + "/" + name + "/courses/" + datasetJsonFileName;
+					const datasetJsonFile = readFileSync(fullJsonFileName, {encoding: "utf8", flag: "r"});
+					const iKindArray = JSON.parse(datasetJsonFile);
+					this.datasets.set(name, {
+						kinds: iKindArray,
+						info: {
+							id: name,
+							kind: InsightDatasetKind.Courses,
+							numRows: iKindArray.length,
+						},
+					});
+				} else if (dataInsightDatasetKind === "rooms") {
+					const datasetJsonFileName = readdirSync(basicDir + "/" + name + "/rooms")[0];
+					const fullJsonFileName = basicDir + "/" + name + "/rooms/" + datasetJsonFileName;
+					const datasetJsonFile = readFileSync(fullJsonFileName, {encoding: "utf8", flag: "r"});
+					const iKindArray = JSON.parse(datasetJsonFile);
+					this.datasets.set(name, {
+						kinds: iKindArray,
+						info: {
+							id: name,
+							kind: InsightDatasetKind.Rooms,
+							numRows: iKindArray.length,
+						},
+					});
+				}
+			}
+		}
 	}
 
 	/**
@@ -134,7 +174,7 @@ export default class InsightFacade implements IInsightFacade {
 		// parse the files in the zip under the courses directory
 		let promisedSections: any[] = [];
 		folderZip?.forEach(function (relativePath, file) {
-			let sections = parseAndWriteJsonFile(file, datasetPath + "/courses/" + relativePath + ".json");
+			let sections = parseJsonFile(file);
 			promisedSections = promisedSections.concat(sections);
 		});
 		// process promised sections into disk and memory
@@ -145,6 +185,8 @@ export default class InsightFacade implements IInsightFacade {
 				const error = new InsightError("The dataset did not contain any valid sections");
 				return Promise.reject(error);
 			} else {
+				// Write the awaitedSections onto the disk
+				writeSectionsAndRooms(awaitedSections, datasetPath + "/courses/" +  id + ".json");
 				this.datasets.set(id, {
 					kinds: awaitedSections,
 					info: {

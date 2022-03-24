@@ -6,7 +6,7 @@ import {IElement} from "../../src/controller/interface/IElement";
 import {ISection} from "../../src/controller/interface/IKind";
 import * as fs from "fs-extra";
 import {getKeys, writeSectionsAndRooms} from "../../src/controller/utility/IUtility";
-import {parseAndWriteJsonFile, parseJsonToCourseSections} from "../../src/controller/utility/IParse";
+import {parseJsonFile, parseJsonToCourseSections} from "../../src/controller/utility/IParse";
 import JSZip from "jszip";
 
 describe("IUtility", function () {
@@ -133,7 +133,7 @@ describe("IUtility", function () {
 					let obj = jsZip2.file("validJson.json");
 					expect(obj).to.be.not.null;
 					if (obj) {
-						parseAndWriteJsonFile(obj, "./data/validJson/courses/aanb002.json").then((output) => {
+						parseJsonFile(obj).then((output) => {
 							expect(output).to.have.length(1);
 							expect(output).to.have.deep.members(courseSections);
 						});
@@ -149,7 +149,7 @@ describe("IUtility", function () {
 				let obj = jsZip2.file("validJson.json");
 				expect(obj).to.be.not.null;
 				if (obj) {
-					parseAndWriteJsonFile(obj, "./data/validJson/courses/aanb002.json").then((output) => {
+					parseJsonFile(obj).then((output) => {
 						expect(output).to.have.length(1);
 						expect(output).to.have.deep.members(courseSections);
 					});
@@ -164,7 +164,7 @@ describe("IUtility", function () {
 				let obj = jsZip2.file("invalidJson.json");
 				expect(obj).to.be.not.null;
 				if (obj) {
-					parseAndWriteJsonFile(obj, "./data/validJson/courses/aanb002.json").then((output) => {
+					parseJsonFile(obj).then((output) => {
 						expect(output).to.have.length(0);
 					});
 				}

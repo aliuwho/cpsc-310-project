@@ -62,7 +62,7 @@ export async function parseJsonToCourseSections(fileContent: string): Promise<IS
 }
 
 // Parses a JSZip object representing a file into course sections and writes sections to filePath in JSON format
-export async function parseAndWriteJsonFile(file: JSZip.JSZipObject, filePath: string): Promise<ISection[]> {
+export async function parseJsonFile(file: JSZip.JSZipObject): Promise<ISection[]> {
 	return file.async("string").then(async (fileContent) => {
 		// parse file's contents
 		// lowercase string for robust key handling
@@ -70,7 +70,6 @@ export async function parseAndWriteJsonFile(file: JSZip.JSZipObject, filePath: s
 		return parseJsonToCourseSections(fileContent).then((awaited) => {
 			if (awaited.length > 0) {
 				courseSections = courseSections.concat(awaited);
-				writeSectionsAndRooms(courseSections, filePath);
 			}
 			return Promise.all<ISection[]>(courseSections);
 		});

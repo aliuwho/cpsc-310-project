@@ -1,16 +1,20 @@
 import express, {Application, Request, Response} from "express";
 import * as http from "http";
 import cors from "cors";
+import InsightFacade from "../controller/InsightFacade";
+import {IInsightFacade, InsightDatasetKind} from "../controller/IInsightFacade";
 
 export default class Server {
 	private readonly port: number;
 	private express: Application;
 	private server: http.Server | undefined;
+	private facade: IInsightFacade;
 
 	constructor(port: number) {
 		console.info(`Server::<init>( ${port} )`);
 		this.port = port;
 		this.express = express();
+		this.facade = new InsightFacade();
 
 		this.registerMiddleware();
 		this.registerRoutes();
@@ -87,9 +91,51 @@ export default class Server {
 		this.express.get("/echo/:msg", Server.echo);
 
 		// TODO: your other endpoints should go here
+		this.express.get("/", (req, res) => {
+			res.send("Main menu");
+		});
+
+		this.express.put("/dataset/:id/:kind", this.putHandler.bind(this));
+
+		this.express.post("/query", this.postHandler.bind(this));
 	}
 
-	// The next two methods handle the echo service.
+	private putHandler(req: Request, res: Response) {
+		const id = req.params.id;
+		const kind = req.params.kind;
+		const rawZip = req.body.toString("base64");
+		if (kind === "courses") {
+			this.facade.addDataset(id, rawZip, InsightDatasetKind.Courses)
+				.then((resultArray: string[]) => {
+					res.status(200).json({result: resultArray});
+				})
+				.catch((err) => {
+					res.status(400).json({error: err.message});
+				});
+		} else if (kind === "rooms") {
+			this.facade.addDataset(id, rawZip, InsightDatasetKind.Rooms)
+				.then((resultArray: string[]) => {
+					res.status(200).json({result: resultArray});
+				})
+				.catch((err) => {
+					res.status(400).json({error: err.message});
+				});
+		} else {
+			res.status(400).json({error: "Invalid InsightDatasetKind"});
+		}
+	}
+
+	private postHandler(req: Request, res: Response) {
+		this.facade.performQuery(req.body)
+			.then((resultArray) => {
+				res.status(200).json({result: resultArray});
+			})
+			.catch((err) => {
+				res.status(400).json({error: err.message});
+			});
+	}
+
+// The next two methods handle the echo service.
 	// These are almost certainly not the best place to put these, but are here for your reference.
 	// By updating the Server.echo function pointer above, these methods can be easily moved.
 	private static echo(req: Request, res: Response) {
