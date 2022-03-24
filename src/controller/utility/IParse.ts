@@ -1,4 +1,3 @@
-import {writeSectionsAndRooms} from "./IUtility";
 import JSZip from "jszip";
 import {ISection} from "../interface/IKind";
 

@@ -1,4 +1,4 @@
-import {ChildNode, Element, parse} from "parse5";
+import {ChildNode, Element, ParentNode, parse} from "parse5";
 import http from "http";
 import JSZip from "jszip";
 import {InsightError} from "../IInsightFacade";
@@ -151,11 +151,43 @@ function findGeolocation(tempAddress: string): Promise<any> {
 	});
 }
 
+// Get other information for 1 building from a ParentNode
+function extractBuildingInfoFromParent(trNode: ParentNode, tempHref: string) {
+	let tempRoomNumber = "";
+	let tempCapacity = "";
+	let tempFurnitureType = "";
+	let tempRoomType = "";
+	trNode.childNodes.forEach((trChild) => {
+		if ("attrs" in trChild && trChild.attrs[0].value === "views-field views-field-field-room-number") {
+			if ("childNodes" in trChild.childNodes[1] && "value" in trChild.childNodes[1].childNodes[0]) {
+				tempRoomNumber = trChild.childNodes[1].childNodes[0].value;
+			}
+		} else if ("attrs" in trChild && trChild.attrs[0].value === "views-field views-field-field-room-capacity") {
+			tempCapacity = extractValue(trChild, tempCapacity);
+			if (!tempCapacity) {
+				tempCapacity = "0";
+			}
+		} else if ("attrs" in trChild && trChild.attrs[0].value === "views-field views-field-field-room-furniture") {
+			tempFurnitureType = extractValue(trChild, tempFurnitureType);
+		} else if ("attrs" in trChild && trChild.attrs[0].value === "views-field views-field-field-room-type") {
+			tempRoomType = extractValue(trChild, tempRoomType);
+		}
+	});
+	return {
+		tempRoomNumber,
+		tempCapacity,
+		tempFurnitureType,
+		tempRoomType,
+		tempHref,
+	};
+}
+
 // Parses an array of buildingInfo objects for multiple rooms in 1 building from the building.htm file
 function searchForBuildingInformation(nodeArray: ChildNode[], resultArray: any[]): any[] {
 	nodeArray.forEach((childNode) => {
 		if (
-			childNode.nodeName === "td" && "attrs" in childNode &&
+			childNode.nodeName === "td" &&
+			"attrs" in childNode &&
 			childNode.attrs[0].value === "views-field views-field-nothing"
 		) {
 			// Get directory
@@ -163,42 +195,11 @@ function searchForBuildingInformation(nodeArray: ChildNode[], resultArray: any[]
 			if ("attrs" in childNode.childNodes[1]) {
 				tempHref = childNode.childNodes[1].attrs[0].value;
 			}
-			// Get parent node to get other information for 1 building
-			const trNode = childNode.parentNode;
-			let tempRoomNumber = "";
-			let tempCapacity = "";
-			let tempFurnitureType = "";
-			let tempRoomType = "";
-			trNode.childNodes.forEach((trChild) => {
-				if ("attrs" in trChild && trChild.attrs[0].value === "views-field views-field-field-room-number") {
-					if ("childNodes" in trChild.childNodes[1] && "value" in trChild.childNodes[1].childNodes[0]) {
-						tempRoomNumber = trChild.childNodes[1].childNodes[0].value;
-					}
-				} else if (
-					"attrs" in trChild &&
-					trChild.attrs[0].value === "views-field views-field-field-room-capacity"
-				) {
-					tempCapacity = extractValue(trChild, tempCapacity);
-					if(!tempCapacity){
-						tempCapacity = "0";
-					}
-				} else if (
-					"attrs" in trChild &&
-					trChild.attrs[0].value === "views-field views-field-field-room-furniture"
-				) {
-					tempFurnitureType = extractValue(trChild, tempFurnitureType);
-				} else if ("attrs" in trChild && trChild.attrs[0].value === "views-field views-field-field-room-type") {
-					tempRoomType = extractValue(trChild, tempRoomType);
-				}
-			});
-			let buildingInfo = {
-				tempRoomNumber, tempCapacity, tempFurnitureType, tempRoomType, tempHref
-			};
+			let buildingInfo = extractBuildingInfoFromParent(childNode.parentNode, tempHref);
 			resultArray.push(buildingInfo);
 		} else if ("childNodes" in childNode) {
 			searchForBuildingInformation(childNode.childNodes, resultArray);
 		}
 	});
-	// Base Case
 	return resultArray;
 }

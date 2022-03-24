@@ -1,5 +1,10 @@
+body {
+	background-color: #cccccc;
+	font-family: monospace;
+}
+
 .button {
-	background-color: #3f51b5;
+	background-color: #476990;
 	border: none;
 	color: white;
 	padding: 15px 32px;
@@ -7,8 +12,64 @@
 	text-decoration: none;
 	display: inline-block;
 	font-size: 16px;
+	font-family: monospace;
 }
 
 .button:hover {
+	cursor: pointer;
+}
+
+#listDatasetsButton {
+	position: absolute;
+	right: 5%;
+	bottom: 5%;
+	transform: translate(0, -50%)
+}
+
+#deleteDatasetButton {
+	position: absolute;
+	left: 5%;
+	bottom: 5%;
+	transform: translate(0, -50%)
+}
+
+#addDatasetButton {
+	position: absolute;
+	left: 5%;
+	top: 5%;
+	transform: translate(0, -50%)
+}
+
+#performQueryButton {
+	position: absolute;
+	right: 5%;
+	top: 5%;
+	transform: translate(0, -50%)
+}
+
+#about-button {
+	position: absolute;
+	top: 50%;
+	right: 50%;
+	transform: translate(+50%, -50%)
+}
+
+.back-button {
+	position: absolute;
+	bottom: 5%;
+	right: 5%;
+	background-color: #476990;
+	border: none;
+	color: white;
+	padding: 15px 32px;
+	text-align: center;
+	text-decoration: none;
+	display: inline-block;
+	font-size: 16px;
+	font-family: monospace;
+	transform: translate(0, -50%)
+}
+
+.back-button:hover {
 	cursor: pointer;
 }
