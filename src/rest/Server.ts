@@ -86,9 +86,9 @@ export default class Server {
 
 	// Registers all request handlers to routes
 	private registerRoutes() {
-		this.express.get("/", (req, res) => {
-			res.send("Main menu");
-		});
+		// this.express.get("/", (req, res) => {
+		// 	res.send("Main menu");
+		// });
 
 		this.express.put("/dataset/:id/:kind", this.putHandler.bind(this));
 		this.express.post("/query", this.postHandler.bind(this));
@@ -153,7 +153,7 @@ export default class Server {
 			})
 			.catch((err) => {
 				console.log(`error occurred in delete: ${err}`);
-				res.status(400).json({error: err});
+				res.status(400).json({error: err.message});
 			});
 	}
 
