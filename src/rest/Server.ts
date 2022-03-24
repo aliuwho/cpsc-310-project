@@ -96,14 +96,16 @@ export default class Server {
 		this.express.get("/datasets", this.getHandler.bind(this)); // List datasets endpoint
 	}
 
-	private putHandler(req: Request, res: Response) {
+	// Responds to a put request
+	private putHandler(req: Request, res: Response): void {
 		const id = req.params.id;
 		const kind = req.params.kind;
 		const rawZip = req.body.toString("base64");
 		if (kind === "courses") {
-			this.facade.addDataset(id, rawZip, InsightDatasetKind.Courses)
+			console.log(`Server::put(..) - Courses - params: ${JSON.stringify(req.params)}`);
+			this.facade
+				.addDataset(id, rawZip, InsightDatasetKind.Courses)
 				.then((resultArray: string[]) => {
-					console.log(`Server::put(..) - Courses - params: ${JSON.stringify(req.params)}`);
 					res.status(200).json({result: resultArray});
 				})
 				.catch((err) => {
@@ -111,9 +113,10 @@ export default class Server {
 					res.status(400).json({error: err.message});
 				});
 		} else if (kind === "rooms") {
-			this.facade.addDataset(id, rawZip, InsightDatasetKind.Rooms)
+			console.log(`Server::put(..) - Kinds - params: ${JSON.stringify(req.params)}`);
+			this.facade
+				.addDataset(id, rawZip, InsightDatasetKind.Rooms)
 				.then((resultArray: string[]) => {
-					console.log(`Server::put(..) - Kinds - params: ${JSON.stringify(req.params)}`);
 					res.status(200).json({result: resultArray});
 				})
 				.catch((err) => {
@@ -126,8 +129,10 @@ export default class Server {
 		}
 	}
 
-	private postHandler(req: Request, res: Response) {
-		this.facade.performQuery(req.body)
+	// Responds to a post request
+	private postHandler(req: Request, res: Response): void {
+		this.facade
+			.performQuery(req.body)
 			.then((resultArray) => {
 				console.log(`Server::post(..) - params: ${JSON.stringify(req.params)}`);
 				res.status(200).json({result: resultArray});
@@ -139,28 +144,31 @@ export default class Server {
 	}
 
 	// Responds to a delete request
-	private async deleteHandler(req: Request, res: Response): Promise<void> {
-		try {
-			console.log(`Server::delete(..) - params: ${JSON.stringify(req.params)}`);
-			const response = await this.facade.removeDataset(req.params.id);
-			res.status(200).json({result: response});
-		} catch (err) {
-			console.log(`error occurred in delete: ${err}`);
-			res.status(400).json({error: err});
-		}
+	private deleteHandler(req: Request, res: Response): void {
+		console.log(`Server::delete(..) - params: ${JSON.stringify(req.params)}`);
+		this.facade
+			.removeDataset(req.params.id)
+			.then((result) => {
+				res.status(200).json({result: result});
+			})
+			.catch((err) => {
+				console.log(`error occurred in delete: ${err}`);
+				res.status(400).json({error: err});
+			});
 	}
 
 	// Responds to a get request
-	private async getHandler(req: Request, res: Response): Promise<void> {
-		// Do something
-		try {
-			console.log(`Server::get(..) - params: ${JSON.stringify(req.params)}`);
-			const response = await this.facade.listDatasets();
-			console.log(`${response}`);
-			res.status(200).json({result: response});
-		} catch (err) {
-			console.log(`error occurred in get: ${err}`);
-			res.status(400).json({error: err});
-		}
+	private getHandler(req: Request, res: Response): void {
+		console.log(`Server::get(..) - params: ${JSON.stringify(req.params)}`);
+		this.facade
+			.listDatasets()
+			.then((resultArray) => {
+				console.log(`${resultArray}`);
+				res.status(200).json({result: resultArray});
+			})
+			.catch((err) => {
+				console.log(`error occurred in get: ${err}`);
+				res.status(400).json({error: err});
+			});
 	}
 }

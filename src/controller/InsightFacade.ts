@@ -21,7 +21,8 @@ import {
 	createResultsWithSpecifiedFields,
 	getDatasets,
 	getKeys,
-	selectFieldsFromResult, writeSectionsAndRooms,
+	selectFieldsFromResult,
+	writeSectionsAndRooms,
 } from "./utility/IUtility";
 import {IQueryValidator} from "./utility/IQueryValidator";
 import {IRoom} from "./interface/IKind";
@@ -186,7 +187,7 @@ export default class InsightFacade implements IInsightFacade {
 				return Promise.reject(error);
 			} else {
 				// Write the awaitedSections onto the disk
-				writeSectionsAndRooms(awaitedSections, datasetPath + "/courses/" +  id + ".json");
+				writeSectionsAndRooms(awaitedSections, datasetPath + "/courses/" + id + ".json");
 				this.datasets.set(id, {
 					kinds: awaitedSections,
 					info: {
@@ -209,7 +210,7 @@ export default class InsightFacade implements IInsightFacade {
 			if (this.datasets.delete(id)) {
 				return Promise.resolve(id);
 			} else {
-				return Promise.reject(new NotFoundError("The dataset was not found"));
+				return Promise.reject(new NotFoundError("The dataset " + id + " was not found"));
 			}
 		} else {
 			return Promise.reject(new InsightError("The dataset contained only whitespace"));

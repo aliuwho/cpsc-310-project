@@ -19,4 +19,4 @@ data/
 *.log
 
 # Javascript files
-*.js
+src/*.js

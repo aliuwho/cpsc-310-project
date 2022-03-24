@@ -13,10 +13,12 @@ describe("Facade D3", function () {
 		facade = new InsightFacade();
 		server = new Server(4321);
 		// TODO: start server here once and handle errors properly
+		server.start();
 	});
 
 	after(function () {
 		// TODO: stop server here once!
+		server.stop();
 	});
 
 	beforeEach(function () {
