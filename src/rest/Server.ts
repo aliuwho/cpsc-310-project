@@ -18,11 +18,6 @@ export default class Server {
 
 		this.registerMiddleware();
 		this.registerRoutes();
-
-		// NOTE: you can serve static frontend files in from your express server
-		// by uncommenting the line below. This makes files in ./frontend/public
-		// accessible at http://localhost:<port>/
-		this.express.use(express.static("./frontend/public"));
 	}
 
 	/**
@@ -76,22 +71,28 @@ export default class Server {
 
 	// Registers middleware to parse request before passing them to request handlers
 	private registerMiddleware() {
+		// NOTE: you can serve static frontend files in from your express server
+		// by uncommenting the line below. This makes files in ./frontend/public
+		// accessible at http://localhost:<port>/
+		this.express.use(express.static("./frontend/public"));
+
 		// JSON parser must be place before raw parser because of wildcard matching done by raw parser below
 		this.express.use(express.json());
 		this.express.use(express.raw({type: "application/*", limit: "10mb"}));
 
 		// enable cors in request headers to allow cross-origin HTTP requests
 		this.express.use(cors());
+
 	}
 
 	// Registers all request handlers to routes
 	private registerRoutes() {
-		// this.express.get("/", (req, res) => {
-		// 	res.send("Main menu");
-		// });
+		this.express.get("/", (req, res) => {
+			res.render("index.html");
+		});
 
-		this.express.put("/dataset/:id/:kind", this.putHandler.bind(this));
-		this.express.post("/query", this.postHandler.bind(this));
+		this.express.put("/dataset/:id/:kind", this.putHandler.bind(this)); // Add datasets endpoint
+		this.express.post("/query", this.postHandler.bind(this)); // Perform query endpoint
 		this.express.delete("/dataset/:id", this.deleteHandler.bind(this)); // Remove datasets endpoint
 		this.express.get("/datasets", this.getHandler.bind(this)); // List datasets endpoint
 	}
