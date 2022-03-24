@@ -2,23 +2,22 @@ import express, {Application, Request, Response} from "express";
 import * as http from "http";
 import cors from "cors";
 import InsightFacade from "../controller/InsightFacade";
+import {IInsightFacade, InsightDatasetKind} from "../controller/IInsightFacade";
 
 export default class Server {
 	private readonly port: number;
 	private express: Application;
 	private server: http.Server | undefined;
-	private insightFacade: InsightFacade;
+	private facade: IInsightFacade;
 
 	constructor(port: number) {
 		console.info(`Server::<init>( ${port} )`);
 		this.port = port;
 		this.express = express();
+		this.facade = new InsightFacade();
 
 		this.registerMiddleware();
 		this.registerRoutes();
-
-		this.insightFacade = new InsightFacade();
-		// this.express.bind(Server.insightFacade);
 
 		// NOTE: you can serve static frontend files in from your express server
 		// by uncommenting the line below. This makes files in ./frontend/public
@@ -87,20 +86,63 @@ export default class Server {
 
 	// Registers all request handlers to routes
 	private registerRoutes() {
-		// This is an example endpoint this you can invoke by accessing this URL in your browser:
-		// http://localhost:4321/echo/hello
-		this.express.get("/echo/:msg", Server.echo);
+		this.express.get("/", (req, res) => {
+			res.send("Main menu");
+		});
 
-		// TODO: your other endpoints should go here
+		this.express.put("/dataset/:id/:kind", this.putHandler.bind(this));
+		this.express.post("/query", this.postHandler.bind(this));
 		this.express.delete("/dataset/:id", this.deleteHandler.bind(this)); // Remove datasets endpoint
 		this.express.get("/datasets", this.getHandler.bind(this)); // List datasets endpoint
+	}
+
+	private putHandler(req: Request, res: Response) {
+		const id = req.params.id;
+		const kind = req.params.kind;
+		const rawZip = req.body.toString("base64");
+		if (kind === "courses") {
+			this.facade.addDataset(id, rawZip, InsightDatasetKind.Courses)
+				.then((resultArray: string[]) => {
+					console.log(`Server::put(..) - Courses - params: ${JSON.stringify(req.params)}`);
+					res.status(200).json({result: resultArray});
+				})
+				.catch((err) => {
+					console.log(`error occurred in put (courses): ${err}`);
+					res.status(400).json({error: err.message});
+				});
+		} else if (kind === "rooms") {
+			this.facade.addDataset(id, rawZip, InsightDatasetKind.Rooms)
+				.then((resultArray: string[]) => {
+					console.log(`Server::put(..) - Kinds - params: ${JSON.stringify(req.params)}`);
+					res.status(200).json({result: resultArray});
+				})
+				.catch((err) => {
+					console.log(`error occurred in put (rooms): ${err}`);
+					res.status(400).json({error: err.message});
+				});
+		} else {
+			console.log("error occurred in put: invalid InsightDatasetKind");
+			res.status(400).json({error: "Invalid InsightDatasetKind"});
+		}
+	}
+
+	private postHandler(req: Request, res: Response) {
+		this.facade.performQuery(req.body)
+			.then((resultArray) => {
+				console.log(`Server::post(..) - params: ${JSON.stringify(req.params)}`);
+				res.status(200).json({result: resultArray});
+			})
+			.catch((err) => {
+				console.log(`error occurred in post: ${err}`);
+				res.status(400).json({error: err.message});
+			});
 	}
 
 	// Responds to a delete request
 	private async deleteHandler(req: Request, res: Response): Promise<void> {
 		try {
 			console.log(`Server::delete(..) - params: ${JSON.stringify(req.params)}`);
-			const response = await this.insightFacade.removeDataset(req.params.id);
+			const response = await this.facade.removeDataset(req.params.id);
 			res.status(200).json({result: response});
 		} catch (err) {
 			console.log(`error occurred in delete: ${err}`);
@@ -113,33 +155,12 @@ export default class Server {
 		// Do something
 		try {
 			console.log(`Server::get(..) - params: ${JSON.stringify(req.params)}`);
-			const response = await this.insightFacade.listDatasets();
+			const response = await this.facade.listDatasets();
 			console.log(`${response}`);
 			res.status(200).json({result: response});
 		} catch (err) {
 			console.log(`error occurred in get: ${err}`);
 			res.status(400).json({error: err});
-		}
-	}
-
-	// The next two methods handle the echo service.
-	// These are almost certainly not the best place to put these, but are here for your reference.
-	// By updating the Server.echo function pointer above, these methods can be easily moved.
-	private static echo(req: Request, res: Response) {
-		try {
-			console.log(`Server::echo(..) - params: ${JSON.stringify(req.params)}`);
-			const response = Server.performEcho(req.params.msg);
-			res.status(200).json({result: response});
-		} catch (err) {
-			res.status(400).json({error: err});
-		}
-	}
-
-	private static performEcho(msg: string): string {
-		if (typeof msg !== "undefined" && msg !== null) {
-			return `${msg}...${msg}`;
-		} else {
-			return "Message not provided";
 		}
 	}
 }
