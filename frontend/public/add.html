@@ -6,7 +6,16 @@
 	<link href="/style.css" rel="stylesheet"/>
 </head>
 <body>
-<button class="button" id="submitPutRequest">Add Dataset</button>
+
+<label for="addIdInput">Name of dataset to Add:</label>
+<input id="addIdInput" type="text">
+<label for="addKindInput">Kind of dataset to Add:</label>
+<input id="addKindInput" type="text">
+<label for="fileInput">Please attach the ZIP file to be added:</label>
+<input id="fileInput" type="file" />
+<!--might want to change input to drop down of course/room-->
+<button class="button" id="submitAddRequest">Add Dataset</button>
+<a id="addResult"></a>
 
 <a href="index.html">
 	<button class="back-button" id="homeButton">Back</button>

@@ -6,7 +6,16 @@
 	<link href="/style.css" rel="stylesheet"/>
 </head>
 <body>
+<label for="queryIdInput">Name of dataset to query:</label>
+<input id="queryIdInput" type="text">
+<label for="queryYearInput">Starting year of query:</label>
+<input id="queryYearInput" type="number">
+<label for="queryDeptInput">Department to query:</label>
+<input id="queryDeptInput" type="text">
+
 <button class="button" id="submitPostRequest">Perform Query</button>
+<a id="queryResult"></a>
+
 <a href="index.html">
 	<button class="back-button" id="homeButton">Back</button>
 </a>
