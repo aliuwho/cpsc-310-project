@@ -114,10 +114,18 @@ export default class InsightFacade implements IInsightFacade {
 			let jsZip = new JSZip();
 			const loadedZip = await jsZip.loadAsync(content, {base64: true});
 
-			if (loadedZip.folder(/courses/).length > 0) {
-				return this.addCourseDataset(datasetPath, loadedZip, id);
-			} else if (loadedZip.folder(/rooms/).length > 0) {
-				return this.addRoomDataset(datasetPath, loadedZip, id);
+			const dataFolder = loadedZip.folder(kind);
+			if (dataFolder != null && typeof dataFolder !== "undefined") {
+				if (dataFolder.length <= 0) {
+					return Promise.reject(new InsightError("The dataset did not contain any valid items"));
+				}
+				if (kind === InsightDatasetKind.Courses) {
+					return this.addCourseDataset(datasetPath, loadedZip, id);
+				} else if (kind === InsightDatasetKind.Rooms) {
+					return this.addRoomDataset(datasetPath, loadedZip, id);
+				} else {
+					return Promise.reject(new InsightError("Invalid dataset kind"));
+				}
 			} else {
 				return Promise.reject(new InsightError("The dataset did not contain a " + kind + " folder"));
 			}
