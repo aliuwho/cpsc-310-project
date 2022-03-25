@@ -21,7 +21,7 @@ As the dean of a department, I want to be able to check the course averages in a
 Scenario 1: Valid Dataset ID
 Given: The dean is on the query page
 When: The user enters a valid dataset id, starting year, and a course dept and clicks the “Submit Query” button
-Then: The corresponding result (an average) will be displayed in the results area of the page.
+Then: The corresponding result (averages of all the courses in the department for every relevant year) will be displayed in the results area of the page.
 
 Scenario 2: Valid Dataset ID
 Given: The dean is on the query page
