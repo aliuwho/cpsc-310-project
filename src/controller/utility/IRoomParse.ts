@@ -3,21 +3,15 @@ import http from "http";
 import JSZip from "jszip";
 import {InsightError} from "../IInsightFacade";
 import {IRoom} from "../interface/IKind";
-import {writeSectionsAndRooms} from "./IUtility";
 
-// Parses a JSZip object representing a file into rooms in buildings and writes rooms to filePath in JSON format
-export async function parseAndWriteHtmlFile(
-	indexHtm: any,
-	folderZip: JSZip | null,
-	filePath: string
-): Promise<IRoom[]> {
+// Parses a JSZip object representing a file into rooms in buildings
+export async function parseAndWriteHtmlFile(indexHtm: any, folderZip: JSZip | null): Promise<IRoom[]> {
 	return indexHtm?.async("string").then(async (fileContent: string) => {
 		let indexDocument = parse(fileContent);
 		// DFS for table objects
 		const allPromisedRooms = parseRoomsFromIndex(indexDocument.childNodes, folderZip as JSZip);
 		return Promise.all(allPromisedRooms).then((awaitedRoomArrays) => {
 			const allActualRooms = awaitedRoomArrays.flat(1);
-			writeSectionsAndRooms(allActualRooms, filePath);
 			return Promise.resolve(allActualRooms);
 		});
 	});
