@@ -51,5 +51,4 @@ describe("Facade D3", function () {
 	});
 	*/
 
-	// The other endpoints work similarly. You should be able to find all instructions at the chai-http documentation
 });
