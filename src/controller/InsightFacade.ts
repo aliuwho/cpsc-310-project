@@ -8,7 +8,7 @@ import {
 	ResultTooLargeError,
 } from "./IInsightFacade";
 import * as fs from "fs";
-import * as fse from "fs-extra";
+import {existsSync, readdirSync, readFileSync, rmSync} from "fs";
 import JSZip from "jszip";
 import {IElement} from "./interface/IElement";
 import {parseAndWriteHtmlFile} from "./utility/IRoomParse";
@@ -22,11 +22,10 @@ import {
 	getDatasets,
 	getKeys,
 	selectFieldsFromResult,
-	writeSectionsAndRooms,
+	writeDatasetToJson,
 } from "./utility/IUtility";
 import {IQueryValidator} from "./utility/IQueryValidator";
-import {IRoom} from "./interface/IKind";
-import {existsSync, readdirSync, readFileSync} from "fs";
+import {IRoom, ISection} from "./interface/IKind";
 
 /**
  * This is the main programmatic entry point for the project.
@@ -45,32 +44,35 @@ export default class InsightFacade implements IInsightFacade {
 	private loadDataOnFacadeDataset() {
 		const basicDir = "./data";
 		if (existsSync(basicDir)) {
-			// read from the data folder (add back all the data) - readdirSync
-			const dataNames = readdirSync(basicDir);
-			for (const name of dataNames) {
-				const dataInsightDatasetKind = readdirSync(basicDir + "/" + name)[0];
-				if (dataInsightDatasetKind === "courses") {
-					const datasetJsonFileName = readdirSync(basicDir + "/" + name + "/courses")[0];
-					const fullJsonFileName = basicDir + "/" + name + "/courses/" + datasetJsonFileName;
+			// read from the courses folder
+			if (existsSync(basicDir + "/courses")) {
+				const dataNames = readdirSync(basicDir + "/courses");
+				for (const dataName of dataNames) {
+					const fullJsonFileName = basicDir + "/courses/" + dataName;
 					const datasetJsonFile = readFileSync(fullJsonFileName, {encoding: "utf8", flag: "r"});
 					const iKindArray = JSON.parse(datasetJsonFile);
-					this.datasets.set(name, {
-						kinds: iKindArray,
+					this.datasets.set(dataName, {
+						kinds: iKindArray as ISection[],
 						info: {
-							id: name,
+							id: dataName.replace(".json", ""),
 							kind: InsightDatasetKind.Courses,
 							numRows: iKindArray.length,
 						},
 					});
-				} else if (dataInsightDatasetKind === "rooms") {
-					const datasetJsonFileName = readdirSync(basicDir + "/" + name + "/rooms")[0];
-					const fullJsonFileName = basicDir + "/" + name + "/rooms/" + datasetJsonFileName;
+				}
+			}
+
+			// read from the rooms folder
+			if (existsSync(basicDir + "/rooms")) {
+				const dataNames = readdirSync(basicDir + "/rooms");
+				for (const dataName of dataNames) {
+					const fullJsonFileName = basicDir + "/rooms/" + dataName;
 					const datasetJsonFile = readFileSync(fullJsonFileName, {encoding: "utf8", flag: "r"});
 					const iKindArray = JSON.parse(datasetJsonFile);
-					this.datasets.set(name, {
-						kinds: iKindArray,
+					this.datasets.set(dataName, {
+						kinds: iKindArray as IRoom[],
 						info: {
-							id: name,
+							id: dataName.replace(".json", ""),
 							kind: InsightDatasetKind.Rooms,
 							numRows: iKindArray.length,
 						},
@@ -106,7 +108,7 @@ export default class InsightFacade implements IInsightFacade {
 		} else if (hasUnderscore(id)) {
 			return Promise.reject(new InsightError("The dataset contained underscore(s)"));
 		} else if (nonWhitespace(id)) {
-			const datasetPath = "./data/" + id;
+			const datasetPath = "./data/" + kind + "/" + id + ".json";
 
 			// parse zip contents and write to disk and memory
 			let jsZip = new JSZip();
@@ -117,7 +119,7 @@ export default class InsightFacade implements IInsightFacade {
 			} else if (loadedZip.folder(/rooms/).length > 0) {
 				return this.addRoomDataset(datasetPath, loadedZip, id);
 			} else {
-				return Promise.reject(new InsightError("The dataset did not contain a courses folder"));
+				return Promise.reject(new InsightError("The dataset did not contain a " + kind + " folder"));
 			}
 		} else {
 			return Promise.reject(new InsightError("The dataset contained only whitespace"));
@@ -125,9 +127,6 @@ export default class InsightFacade implements IInsightFacade {
 	}
 
 	private addRoomDataset(datasetPath: string, loadedZip: JSZip, id: string): Promise<string[]> {
-		// create directory for this dataset's json files
-		fs.mkdirSync(datasetPath + "/rooms", {recursive: true});
-
 		// Access the files
 		let folderZip = loadedZip.folder("rooms");
 		let indexHtm = folderZip?.file("index.htm");
@@ -138,20 +137,15 @@ export default class InsightFacade implements IInsightFacade {
 		}
 
 		// Convert index.htm to string and parse index.htm file
-		let promisedRooms: Promise<IRoom[]> = parseAndWriteHtmlFile(
-			indexHtm,
-			folderZip,
-			datasetPath + "/rooms/" + id + ".json"
-		);
-
-		// process promised sections into disk and memory
-		return promisedRooms.then((awaitedRooms) => {
-			// awaitedRooms = awaitedRooms.reduce((accumulator, value) => accumulator.concat(value), []);
+		return parseAndWriteHtmlFile(indexHtm, folderZip).then((awaitedRooms) => {
+			// process promised sections into disk and memory
 			if (awaitedRooms.length === 0) {
-				fse.removeSync(datasetPath); // remove the dir we created
 				const error = new InsightError("The dataset did not contain any valid rooms");
 				return Promise.reject(error);
 			} else {
+				// create directory for this dataset's json files
+				fs.mkdirSync("./data/rooms", {recursive: true});
+				writeDatasetToJson(awaitedRooms, datasetPath);
 				this.datasets.set(id, {
 					kinds: awaitedRooms,
 					info: {
@@ -168,11 +162,8 @@ export default class InsightFacade implements IInsightFacade {
 	}
 
 	private addCourseDataset(datasetPath: string, loadedZip: JSZip, id: string): Promise<string[]> {
-		// create directory for this dataset's json files
-		fs.mkdirSync(datasetPath + "/courses", {recursive: true});
-		let folderZip = loadedZip.folder("courses");
-
 		// parse the files in the zip under the courses directory
+		let folderZip = loadedZip.folder("courses");
 		let promisedSections: any[] = [];
 		folderZip?.forEach(function (relativePath, file) {
 			let sections = parseJsonFile(file);
@@ -180,14 +171,15 @@ export default class InsightFacade implements IInsightFacade {
 		});
 		// process promised sections into disk and memory
 		return Promise.all(promisedSections).then((awaitedSections) => {
-			awaitedSections = awaitedSections.reduce((accumulator, value) => accumulator.concat(value), []);
+			awaitedSections = awaitedSections.flat(1);
 			if (awaitedSections.length === 0) {
-				fse.removeSync(datasetPath); // remove the dir we created
 				const error = new InsightError("The dataset did not contain any valid sections");
 				return Promise.reject(error);
 			} else {
 				// Write the awaitedSections onto the disk
-				writeSectionsAndRooms(awaitedSections, datasetPath + "/courses/" + id + ".json");
+				// create directory for this dataset's json files
+				fs.mkdirSync("./data/courses", {recursive: true});
+				writeDatasetToJson(awaitedSections, datasetPath);
 				this.datasets.set(id, {
 					kinds: awaitedSections,
 					info: {
@@ -207,6 +199,11 @@ export default class InsightFacade implements IInsightFacade {
 		if (hasUnderscore(id)) {
 			return Promise.reject(new InsightError("The dataset contained underscore(s)"));
 		} else if (nonWhitespace(id)) {
+			let dataset = this.datasets.get(id);
+			if (dataset) {
+				const datasetKind = dataset.info.kind;
+				rmSync("./data/" + datasetKind + "/" + id + ".json");
+			}
 			if (this.datasets.delete(id)) {
 				return Promise.resolve(id);
 			} else {

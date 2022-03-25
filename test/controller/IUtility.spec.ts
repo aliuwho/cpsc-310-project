@@ -5,7 +5,7 @@ import {expect} from "chai";
 import {IElement} from "../../src/controller/interface/IElement";
 import {ISection} from "../../src/controller/interface/IKind";
 import * as fs from "fs-extra";
-import {getKeys, writeSectionsAndRooms} from "../../src/controller/utility/IUtility";
+import {getKeys, writeDatasetToJson} from "../../src/controller/utility/IUtility";
 import {parseJsonFile, parseJsonToCourseSections} from "../../src/controller/utility/IParse";
 import JSZip from "jszip";
 
@@ -63,9 +63,8 @@ describe("IUtility", function () {
 		describe("writeCourseSections tests", function () {
 			it("should write valid course sections", function () {
 				let path: string = "./data/test/writeValidSections.json";
-				writeSectionsAndRooms(courseSections, path).then(() => {
-					expect(existsSync(path)).to.equal(true);
-				});
+				writeDatasetToJson(courseSections, path);
+				expect(existsSync(path)).to.equal(true);
 			});
 		});
 
