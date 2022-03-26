@@ -173,7 +173,7 @@ export default class Server {
 			})
 			.catch((err) => {
 				console.log(`error occurred in get: ${err}`);
-				res.status(400).json({error: err});
+				res.status(400).json({error: err.message});
 			});
 	}
 }
