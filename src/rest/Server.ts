@@ -2,7 +2,7 @@ import express, {Application, Request, Response} from "express";
 import * as http from "http";
 import cors from "cors";
 import InsightFacade from "../controller/InsightFacade";
-import {IInsightFacade, InsightDatasetKind} from "../controller/IInsightFacade";
+import {IInsightFacade, InsightDatasetKind, NotFoundError} from "../controller/IInsightFacade";
 
 export default class Server {
 	private readonly port: number;
@@ -154,7 +154,11 @@ export default class Server {
 			})
 			.catch((err) => {
 				console.log(`error occurred in delete: ${err}`);
-				res.status(400).json({error: err.message});
+				if (err instanceof NotFoundError) {
+					res.status(404).json({error: err.message});
+				} else {
+					res.status(400).json({error: err.message});
+				}
 			});
 	}
 
