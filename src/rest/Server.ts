@@ -82,7 +82,6 @@ export default class Server {
 
 		// enable cors in request headers to allow cross-origin HTTP requests
 		this.express.use(cors());
-
 	}
 
 	// Registers all request handlers to routes
