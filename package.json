@@ -14,7 +14,6 @@
 		"express": "4.17.2",
 		"fs-extra": "10.0.0",
 		"jszip": "3.7.1",
-		"nodemon": "^2.0.15",
 		"parse5": "6.0.1"
 	},
 	"devDependencies": {
