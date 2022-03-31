@@ -75,7 +75,7 @@ export class IQueryValidator {
 	private checkFilterBlock(block: any): void {
 		if (block["OR"] || block["AND"]) {
 			// Logic comparison
-			checkObjectLength(block, 1,"AND/OR");
+			checkObjectLength(block, 1, "AND/OR");
 			let filterKey = Object.keys(block)[0];
 			let filters = block[filterKey];
 			checkNonEmptyArray(filters, "AND/OR args");

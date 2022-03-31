@@ -50,5 +50,4 @@ describe("Facade D3", function () {
 		}
 	});
 	*/
-
 });

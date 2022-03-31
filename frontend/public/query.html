@@ -7,19 +7,23 @@
 </head>
 <body>
 <label for="queryIdInput">Name of dataset to query:</label>
-<input id="queryIdInput" type="text">
+<input id="queryIdInput" type="text" required>
+
 <label for="queryYearInput">Starting year of query:</label>
-<input id="queryYearInput" type="number">
+<input id="queryYearInput" type="number" required>
+
 <label for="queryDeptInput">Department to query:</label>
-<input id="queryDeptInput" type="text">
+<input id="queryDeptInput" type="text" required>
 
 <button class="button" id="submitPostRequest">Perform Query</button>
+
+<br>
+
 <a id="queryResult"></a>
 
 <a href="index.html">
 	<button class="back-button" id="homeButton">Back</button>
 </a>
-
 
 <script src="js/http.js" type="text/javascript"></script>
 <script src="js/query.js" type="text/javascript"></script>

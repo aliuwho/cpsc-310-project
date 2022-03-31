@@ -24,6 +24,7 @@ export function parseRoomsFromIndex(nodeArray: ChildNode[], folderZip: JSZip): a
 		if (
 			childNode.nodeName === "td" &&
 			"attrs" in childNode &&
+			childNode.attrs[0] &&
 			childNode.attrs[0].value === "views-field views-field-nothing"
 		) {
 			allPromises.push(searchForRoomsinBuilding(childNode, folderZip));
@@ -34,14 +35,24 @@ export function parseRoomsFromIndex(nodeArray: ChildNode[], folderZip: JSZip): a
 	return allPromises; // [Promise<IRoom[]>, Promise<IRoom[]>, ...]
 }
 
+function getTempDirectory(childNode: Element): string {
+	let tempDirectory = "";
+	if (
+		"attrs" in childNode.childNodes[1] &&
+		childNode.childNodes[1].attrs[0] &&
+		"value" in childNode.childNodes[1].attrs[0]
+	) {
+		tempDirectory = childNode.childNodes[1].attrs[0].value;
+	}
+	return tempDirectory;
+}
+
 // Parses a Promise<IRoom[]> for multiple rooms in 1 building from the index.htm file and building.htm file
 async function searchForRoomsinBuilding(childNode: Element, folderZip: JSZip): Promise<IRoom[]> {
 	let promisedRoomArrayForOneBuilding: IRoom[] = [];
 	// Get directory
 	let tempDirectory = "";
-	if ("attrs" in childNode.childNodes[1]) {
-		tempDirectory = childNode.childNodes[1].attrs[0].value;
-	}
+	tempDirectory = getTempDirectory(childNode);
 	// Get parent node to get other information for 1 building
 	const trNode = childNode.parentNode;
 	const extractedBuildingInfo = extractBuildingInfo(trNode as Element);
@@ -100,13 +111,30 @@ function extractBuildingInfo(trNode: Element): any {
 	let tempFullName = "";
 	let tempAddress = "";
 	trNode.childNodes.forEach((trChild) => {
-		if ("attrs" in trChild && trChild.attrs[0].value === "views-field views-field-field-building-code") {
+		if (
+			"attrs" in trChild &&
+			trChild.attrs[0] &&
+			trChild.attrs[0].value === "views-field views-field-field-building-code"
+		) {
 			tempShortName = extractValue(trChild, tempShortName);
-		} else if ("attrs" in trChild && trChild.attrs[0].value === "views-field views-field-title") {
-			if ("childNodes" in trChild.childNodes[1] && "value" in trChild.childNodes[1].childNodes[0]) {
+		} else if (
+			"attrs" in trChild &&
+			trChild.attrs[0] &&
+			trChild.attrs[0].value === "views-field views-field-title"
+		) {
+			if (
+				"childNodes" in trChild &&
+				trChild.childNodes[1] &&
+				"childNodes" in trChild.childNodes[1] &&
+				"value" in trChild.childNodes[1].childNodes[0]
+			) {
 				tempFullName = trChild.childNodes[1].childNodes[0].value;
 			}
-		} else if ("attrs" in trChild && trChild.attrs[0].value === "views-field views-field-field-building-address") {
+		} else if (
+			"attrs" in trChild &&
+			trChild.attrs[0] &&
+			trChild.attrs[0].value === "views-field views-field-field-building-address"
+		) {
 			tempAddress = extractValue(trChild, tempShortName);
 		}
 	});
@@ -115,7 +143,7 @@ function extractBuildingInfo(trNode: Element): any {
 
 // Helper function: extract the specific td value from index.htm file
 function extractValue(trChild: Element, tempShortName: string) {
-	if ("value" in trChild.childNodes[0]) {
+	if ("childNodes" in trChild && trChild.childNodes[0] && "value" in trChild.childNodes[0]) {
 		tempShortName = trChild.childNodes[0].value.trim();
 	}
 	return tempShortName;
@@ -152,18 +180,33 @@ function extractBuildingInfoFromParent(trNode: ParentNode, tempHref: string) {
 	let tempFurnitureType = "";
 	let tempRoomType = "";
 	trNode.childNodes.forEach((trChild) => {
-		if ("attrs" in trChild && trChild.attrs[0].value === "views-field views-field-field-room-number") {
-			if ("childNodes" in trChild.childNodes[1] && "value" in trChild.childNodes[1].childNodes[0]) {
-				tempRoomNumber = trChild.childNodes[1].childNodes[0].value;
-			}
-		} else if ("attrs" in trChild && trChild.attrs[0].value === "views-field views-field-field-room-capacity") {
-			tempCapacity = extractValue(trChild, tempCapacity);
-			if (!tempCapacity) {
-				tempCapacity = "0";
-			}
-		} else if ("attrs" in trChild && trChild.attrs[0].value === "views-field views-field-field-room-furniture") {
+		if (
+			"attrs" in trChild &&
+			trChild.attrs[0] &&
+			"value" in trChild.attrs[0] &&
+			trChild.attrs[0].value === "views-field views-field-field-room-number"
+		) {
+			tempRoomNumber = getTempRoomNumber(trChild);
+		} else if (
+			"attrs" in trChild &&
+			trChild.attrs[0] &&
+			"value" in trChild.attrs[0] &&
+			trChild.attrs[0].value === "views-field views-field-field-room-capacity"
+		) {
+			tempCapacity = getTempCapacity(trChild);
+		} else if (
+			"attrs" in trChild &&
+			trChild.attrs[0] &&
+			"value" in trChild.attrs[0] &&
+			trChild.attrs[0].value === "views-field views-field-field-room-furniture"
+		) {
 			tempFurnitureType = extractValue(trChild, tempFurnitureType);
-		} else if ("attrs" in trChild && trChild.attrs[0].value === "views-field views-field-field-room-type") {
+		} else if (
+			"attrs" in trChild &&
+			trChild.attrs[0] &&
+			"value" in trChild.attrs[0] &&
+			trChild.attrs[0].value === "views-field views-field-field-room-type"
+		) {
 			tempRoomType = extractValue(trChild, tempRoomType);
 		}
 	});
@@ -176,17 +219,48 @@ function extractBuildingInfoFromParent(trNode: ParentNode, tempHref: string) {
 	};
 }
 
+function getTempRoomNumber(trChild: Element): string{
+	let tempRoomNumber = "";
+	if (
+		"childNodes" in trChild &&
+		trChild.childNodes[1] &&
+		"childNodes" in trChild.childNodes[1] &&
+		trChild.childNodes[1].childNodes[0] &&
+		"value" in trChild.childNodes[1].childNodes[0]
+	) {
+		tempRoomNumber = trChild.childNodes[1].childNodes[0].value;
+	}
+	return tempRoomNumber;
+}
+
+function getTempCapacity(trChild: Element): string {
+	let tempCapacity = "";
+	tempCapacity = extractValue(trChild, tempCapacity);
+	if (!tempCapacity) {
+		tempCapacity = "0";
+	}
+	return tempCapacity;
+}
+
 // Parses an array of buildingInfo objects for multiple rooms in 1 building from the building.htm file
 function searchForBuildingInformation(nodeArray: ChildNode[], resultArray: any[]): any[] {
 	nodeArray.forEach((childNode) => {
 		if (
 			childNode.nodeName === "td" &&
 			"attrs" in childNode &&
+			childNode.attrs[0] &&
+			"value" in childNode.attrs[0] &&
 			childNode.attrs[0].value === "views-field views-field-nothing"
 		) {
 			// Get directory
 			let tempHref = "";
-			if ("attrs" in childNode.childNodes[1]) {
+			if (
+				"childNodes" in childNode &&
+				childNode.childNodes[1] &&
+				"attrs" in childNode.childNodes[1] &&
+				childNode.childNodes[1].attrs[0] &&
+				"value" in childNode.childNodes[1].attrs[0]
+			) {
 				tempHref = childNode.childNodes[1].attrs[0].value;
 			}
 			let buildingInfo = extractBuildingInfoFromParent(childNode.parentNode, tempHref);

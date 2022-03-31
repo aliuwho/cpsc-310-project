@@ -119,7 +119,6 @@ export function checkObjectLength(obj: any, len: number, name: string): void {
 	}
 }
 
-
 // Check that an object is non-empty array.
 // Otherwise, throws error with name
 export function checkNonEmptyArray(obj: any, name: string): void {

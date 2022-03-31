@@ -48,13 +48,14 @@ export default class InsightFacade implements IInsightFacade {
 			if (existsSync(basicDir + "/courses")) {
 				const dataNames = readdirSync(basicDir + "/courses");
 				for (const dataName of dataNames) {
+					const dataNameId = dataName.replace(".json", "");
 					const fullJsonFileName = basicDir + "/courses/" + dataName;
 					const datasetJsonFile = readFileSync(fullJsonFileName, {encoding: "utf8", flag: "r"});
 					const iKindArray = JSON.parse(datasetJsonFile);
-					this.datasets.set(dataName, {
+					this.datasets.set(dataNameId, {
 						kinds: iKindArray as ISection[],
 						info: {
-							id: dataName.replace(".json", ""),
+							id: dataNameId,
 							kind: InsightDatasetKind.Courses,
 							numRows: iKindArray.length,
 						},
@@ -113,7 +114,7 @@ export default class InsightFacade implements IInsightFacade {
 			// parse zip contents and write to disk and memory
 			let jsZip = new JSZip();
 			const loadedZip = await jsZip.loadAsync(content, {base64: true});
-
+			// !!! catch error for invalid ZIP file
 			const dataFolder = loadedZip.folder(kind);
 			if (dataFolder != null && typeof dataFolder !== "undefined") {
 				if (dataFolder.length <= 0) {
