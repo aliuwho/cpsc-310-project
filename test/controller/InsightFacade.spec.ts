@@ -140,7 +140,7 @@ describe("InsightFacade", function () {
 
 		it("rejects invalid file type", function () {
 			const invalidFile = getContentFromArchives("invalidFile.json");
-			return facade.addDataset("courses_reject", invalidFile, InsightDatasetKind.Courses).catch((err) => {
+			return facade.addDataset("courses-reject", invalidFile, InsightDatasetKind.Courses).catch((err) => {
 				expect(err).to.be.instanceOf(InsightError);
 			});
 		});
@@ -149,7 +149,7 @@ describe("InsightFacade", function () {
 			const emptyFile = getContentFromArchives("empty-courses.zip");
 			return (
 				facade
-					.addDataset("courses_reject", emptyFile, InsightDatasetKind.Courses)
+					.addDataset("courses-reject", emptyFile, InsightDatasetKind.Courses)
 					.then()
 					// Unsure if then() can be empty / need to throw something
 					.catch((err) => {
@@ -187,7 +187,7 @@ describe("InsightFacade", function () {
 		it("rejects 0 valid courses", function () {
 			const emptyFile = getContentFromArchives("empty-courses.zip");
 			return facade
-				.addDataset("courses_reject", emptyFile, InsightDatasetKind.Courses)
+				.addDataset("courses-reject", emptyFile, InsightDatasetKind.Courses)
 				.then()
 				.catch((err) => {
 					expect(err).to.be.instanceOf(InsightError);
@@ -317,7 +317,7 @@ describe("InsightFacade", function () {
 		it("rejects invalid id (contains underscore) - rooms", function () {
 			return (
 				facade
-					.addDataset("courses_reject", rooms, InsightDatasetKind.Rooms)
+					.addDataset("rooms_reject", rooms, InsightDatasetKind.Rooms)
 					.then()
 					// Unsure if then() can be empty / need to throw something
 					.catch((err) => {
@@ -338,7 +338,7 @@ describe("InsightFacade", function () {
 		it("rejects 0 valid rooms - rooms", function () {
 			const emptyFile = getContentFromArchives("no-rooms.zip");
 			return facade
-				.addDataset("rooms_reject", emptyFile, InsightDatasetKind.Rooms)
+				.addDataset("rooms-reject", emptyFile, InsightDatasetKind.Rooms)
 				.then()
 				.catch((err) => {
 					expect(err).to.be.instanceOf(InsightError);
@@ -348,7 +348,7 @@ describe("InsightFacade", function () {
 		it("rejects missing index htm file - rooms", function () {
 			const invalidIndexFile = getContentFromArchives("invalid-index-htm.zip");
 			return facade
-				.addDataset("rooms_reject", invalidIndexFile, InsightDatasetKind.Rooms)
+				.addDataset("rooms-reject", invalidIndexFile, InsightDatasetKind.Rooms)
 				.then()
 				.catch((err) => {
 					expect(err).to.be.instanceOf(InsightError);
@@ -359,7 +359,7 @@ describe("InsightFacade", function () {
 			const invalidRoomsTypoFile = getContentFromArchives("invalid-rooms-typo.zip");
 			return (
 				facade
-					.addDataset("rooms_reject", invalidRoomsTypoFile, InsightDatasetKind.Rooms)
+					.addDataset("rooms-reject", invalidRoomsTypoFile, InsightDatasetKind.Rooms)
 					.then()
 					// Unsure if then() can be empty / need to throw something
 					.catch((err) => {
@@ -372,7 +372,7 @@ describe("InsightFacade", function () {
 			const invalidRoomsTypoFile = getContentFromArchives("invalid-rooms-typo.zip");
 			return (
 				facade
-					.addDataset("rooms_reject", invalidRoomsTypoFile, InsightDatasetKind.Rooms)
+					.addDataset("rooms-reject", invalidRoomsTypoFile, InsightDatasetKind.Rooms)
 					.then()
 					// Unsure if then() can be empty / need to throw something
 					.catch((err) => {
@@ -389,154 +389,163 @@ describe("InsightFacade", function () {
 				expect(err).to.be.instanceof(InsightError);
 			}
 		});
+
+		it("rejects file type - rooms", function () {
+			const invalidFile = getContentFromArchives("invalidFile.json");
+			return facade.addDataset("rooms-reject", invalidFile, InsightDatasetKind.Rooms).catch((err) => {
+				expect(err).to.be.instanceOf(InsightError);
+			});
+		});
 	});
 
-	// describe("Add Datasets - Persistence Tests", function () {
-	// 	let facade: IInsightFacade;
-	//
-	// 	beforeEach(function () {
-	// 		clearDisk();
-	// 		facade = new InsightFacade();
-	// 	});
-	//
-	// 	it("should have 0 datasets when no  data exists on disk", function () {
-	// 		facade = new InsightFacade();
-	// 		return facade.listDatasets().then((resultArray) => {
-	// 			expect(resultArray).to.be.an.instanceOf(Array);
-	// 			expect(resultArray).to.have.length(0);
-	// 		});
-	// 	});
-	//
-	// 	it("should recover a single rooms dataset from disk", function () {
-	// 		return facade
-	// 			.addDataset("rooms", rooms, InsightDatasetKind.Rooms)
-	// 			.then((addedIDs) => {
-	// 				expect(addedIDs).to.deep.equal(["rooms"]);
-	// 				expect(addedIDs).to.be.an.instanceOf(Array);
-	// 				expect(addedIDs).to.have.length(1);
-	// 			})
-	// 			.then(() => {
-	// 				facade = new InsightFacade();
-	// 				return facade.listDatasets();
-	// 			})
-	// 			.then((insightDatasets) => {
-	// 				expect(insightDatasets).to.deep.equal([
-	// 					{
-	// 						id: "rooms",
-	// 						kind: InsightDatasetKind.Rooms,
-	// 						numRows: 364,
-	// 					},
-	// 				]);
-	// 			});
-	// 	});
-	//
-	// 	it("should recover multiple rooms datasets from disk", function () {
-	// 		return facade
-	// 			.addDataset("rooms", rooms, InsightDatasetKind.Rooms)
-	// 			.then(() => {
-	// 				return facade.addDataset("rooms-2", rooms, InsightDatasetKind.Rooms);
-	// 			})
-	// 			.then(() => {
-	// 				facade = new InsightFacade();
-	// 				return facade.listDatasets();
-	// 			})
-	// 			.then((insightDatasets) => {
-	// 				expect(insightDatasets).to.be.an.instanceOf(Array);
-	// 				expect(insightDatasets).to.have.length(2);
-	// 				expect(insightDatasets).to.have.deep.members([
-	// 					{
-	// 						id: "rooms",
-	// 						kind: InsightDatasetKind.Rooms,
-	// 						numRows: 364,
-	// 					},
-	// 					{
-	// 						id: "rooms-2",
-	// 						kind: InsightDatasetKind.Rooms,
-	// 						numRows: 364,
-	// 					},
-	// 				]);
-	// 			});
-	// 	});
-	//
-	// 	it("should recover a single courses dataset from disk", function () {
-	// 		return facade
-	// 			.addDataset("courses", courses, InsightDatasetKind.Courses)
-	// 			.then((addedIDs) => {
-	// 				expect(addedIDs).to.deep.equal(["courses"]);
-	// 				expect(addedIDs).to.be.an.instanceOf(Array);
-	// 				expect(addedIDs).to.have.length(1);
-	// 			})
-	// 			.then(() => {
-	// 				facade = new InsightFacade();
-	// 				return facade.listDatasets();
-	// 			})
-	// 			.then((insightDatasets) => {
-	// 				expect(insightDatasets).to.deep.equal([
-	// 					{
-	// 						id: "courses",
-	// 						kind: InsightDatasetKind.Courses,
-	// 						numRows: 64612,
-	// 					},
-	// 				]);
-	// 			});
-	// 	});
-	//
-	// 	it("should recover multiple courses datasets from disk", function () {
-	// 		return facade
-	// 			.addDataset("courses", courses, InsightDatasetKind.Courses)
-	// 			.then(() => {
-	// 				return facade.addDataset("courses-2", courses, InsightDatasetKind.Courses);
-	// 			})
-	// 			.then(() => {
-	// 				facade = new InsightFacade();
-	// 				return facade.listDatasets();
-	// 			})
-	// 			.then((insightDatasets) => {
-	// 				expect(insightDatasets).to.be.an.instanceOf(Array);
-	// 				expect(insightDatasets).to.have.length(2);
-	// 				expect(insightDatasets).to.have.deep.members([
-	// 					{
-	// 						id: "courses",
-	// 						kind: InsightDatasetKind.Courses,
-	// 						numRows: 64612,
-	// 					},
-	// 					{
-	// 						id: "courses-2",
-	// 						kind: InsightDatasetKind.Courses,
-	// 						numRows: 64612,
-	// 					},
-	// 				]);
-	// 			});
-	// 	});
-	//
-	// 	it("should recover multiple courses and rooms datasets from disk", function () {
-	// 		return facade
-	// 			.addDataset("rooms", rooms, InsightDatasetKind.Rooms)
-	// 			.then(() => {
-	// 				return facade.addDataset("courses", courses, InsightDatasetKind.Courses);
-	// 			})
-	// 			.then(() => {
-	// 				facade = new InsightFacade();
-	// 				return facade.listDatasets();
-	// 			})
-	// 			.then((insightDatasets) => {
-	// 				expect(insightDatasets).to.be.an.instanceOf(Array);
-	// 				expect(insightDatasets).to.have.length(2);
-	// 				expect(insightDatasets).to.have.deep.members([
-	// 					{
-	// 						id: "rooms",
-	// 						kind: InsightDatasetKind.Rooms,
-	// 						numRows: 364,
-	// 					},
-	// 					{
-	// 						id: "courses",
-	// 						kind: InsightDatasetKind.Courses,
-	// 						numRows: 64612,
-	// 					},
-	// 				]);
-	// 			});
-	// 	});
-	// });
+	/*
+		describe("Add Datasets - Persistence Tests", function () {
+			let facade: IInsightFacade;
+
+			beforeEach(function () {
+				clearDisk();
+				facade = new InsightFacade();
+			});
+
+			it("should have 0 datasets when no  data exists on disk", function () {
+				facade = new InsightFacade();
+				return facade.listDatasets().then((resultArray) => {
+					expect(resultArray).to.be.an.instanceOf(Array);
+					expect(resultArray).to.have.length(0);
+				});
+			});
+
+			it("should recover a single rooms dataset from disk", function () {
+				return facade
+					.addDataset("rooms", rooms, InsightDatasetKind.Rooms)
+					.then((addedIDs) => {
+						expect(addedIDs).to.deep.equal(["rooms"]);
+						expect(addedIDs).to.be.an.instanceOf(Array);
+						expect(addedIDs).to.have.length(1);
+					})
+					.then(() => {
+						facade = new InsightFacade();
+						return facade.listDatasets();
+					})
+					.then((insightDatasets) => {
+						expect(insightDatasets).to.deep.equal([
+							{
+								id: "rooms",
+								kind: InsightDatasetKind.Rooms,
+								numRows: 364,
+							},
+						]);
+					});
+			});
+
+			it("should recover multiple rooms datasets from disk", function () {
+				return facade
+					.addDataset("rooms", rooms, InsightDatasetKind.Rooms)
+					.then(() => {
+						return facade.addDataset("rooms-2", rooms, InsightDatasetKind.Rooms);
+					})
+					.then(() => {
+						facade = new InsightFacade();
+						return facade.listDatasets();
+					})
+					.then((insightDatasets) => {
+						expect(insightDatasets).to.be.an.instanceOf(Array);
+						expect(insightDatasets).to.have.length(2);
+						expect(insightDatasets).to.have.deep.members([
+							{
+								id: "rooms",
+								kind: InsightDatasetKind.Rooms,
+								numRows: 364,
+							},
+							{
+								id: "rooms-2",
+								kind: InsightDatasetKind.Rooms,
+								numRows: 364,
+							},
+						]);
+					});
+			});
+
+			it("should recover a single courses dataset from disk", function () {
+				return facade
+					.addDataset("courses", courses, InsightDatasetKind.Courses)
+					.then((addedIDs) => {
+						expect(addedIDs).to.deep.equal(["courses"]);
+						expect(addedIDs).to.be.an.instanceOf(Array);
+						expect(addedIDs).to.have.length(1);
+					})
+					.then(() => {
+						facade = new InsightFacade();
+						return facade.listDatasets();
+					})
+					.then((insightDatasets) => {
+						expect(insightDatasets).to.deep.equal([
+							{
+								id: "courses",
+								kind: InsightDatasetKind.Courses,
+								numRows: 64612,
+							},
+						]);
+					});
+			});
+
+			it("should recover multiple courses datasets from disk", function () {
+				return facade
+					.addDataset("courses", courses, InsightDatasetKind.Courses)
+					.then(() => {
+						return facade.addDataset("courses-2", courses, InsightDatasetKind.Courses);
+					})
+					.then(() => {
+						facade = new InsightFacade();
+						return facade.listDatasets();
+					})
+					.then((insightDatasets) => {
+						expect(insightDatasets).to.be.an.instanceOf(Array);
+						expect(insightDatasets).to.have.length(2);
+						expect(insightDatasets).to.have.deep.members([
+							{
+								id: "courses",
+								kind: InsightDatasetKind.Courses,
+								numRows: 64612,
+							},
+							{
+								id: "courses-2",
+								kind: InsightDatasetKind.Courses,
+								numRows: 64612,
+							},
+						]);
+					});
+			});
+
+			it("should recover multiple courses and rooms datasets from disk", function () {
+				return facade
+					.addDataset("rooms", rooms, InsightDatasetKind.Rooms)
+					.then(() => {
+						return facade.addDataset("courses", courses, InsightDatasetKind.Courses);
+					})
+					.then(() => {
+						facade = new InsightFacade();
+						return facade.listDatasets();
+					})
+					.then((insightDatasets) => {
+						expect(insightDatasets).to.be.an.instanceOf(Array);
+						expect(insightDatasets).to.have.length(2);
+						expect(insightDatasets).to.have.deep.members([
+							{
+								id: "rooms",
+								kind: InsightDatasetKind.Rooms,
+								numRows: 364,
+							},
+							{
+								id: "courses",
+								kind: InsightDatasetKind.Courses,
+								numRows: 64612,
+							},
+						]);
+					});
+			});
+		});
+	*/
 
 	describe("Remove Datasets", function () {
 		let facade: IInsightFacade;
@@ -618,44 +627,47 @@ describe("InsightFacade", function () {
 		});
 	});
 
-	describe("Remove Datasets - Persistence Tests", function () {
-		let facade: IInsightFacade;
+	/*
 
-		beforeEach(function () {
-			clearDisk();
-			facade = new InsightFacade();
-		});
+		describe("Remove Datasets - Persistence Tests", function () {
+			let facade: IInsightFacade;
 
-		it("should clear courses datasets", function () {
-			return facade
-				.addDataset("courses", courses, InsightDatasetKind.Courses)
-				.then(() => {
-					facade.removeDataset("courses");
-				})
-				.then(() => {
-					facade = new InsightFacade();
-					return facade.listDatasets();
-				})
-				.then((insightDatasets) => {
-					expect(insightDatasets).to.deep.equal([]);
-				});
-		});
+			beforeEach(function () {
+				clearDisk();
+				facade = new InsightFacade();
+			});
 
-		it("should clear rooms datasets", function () {
-			return facade
-				.addDataset("rooms", rooms, InsightDatasetKind.Rooms)
-				.then(() => {
-					facade.removeDataset("rooms");
-				})
-				.then(() => {
-					facade = new InsightFacade();
-					return facade.listDatasets();
-				})
-				.then((insightDatasets) => {
-					expect(insightDatasets).to.deep.equal([]);
-				});
+			it("should clear courses datasets", function () {
+				return facade
+					.addDataset("courses", courses, InsightDatasetKind.Courses)
+					.then(() => {
+						facade.removeDataset("courses");
+					})
+					.then(() => {
+						facade = new InsightFacade();
+						return facade.listDatasets();
+					})
+					.then((insightDatasets) => {
+						expect(insightDatasets).to.deep.equal([]);
+					});
+			});
+
+			it("should clear rooms datasets", function () {
+				return facade
+					.addDataset("rooms", rooms, InsightDatasetKind.Rooms)
+					.then(() => {
+						facade.removeDataset("rooms");
+					})
+					.then(() => {
+						facade = new InsightFacade();
+						return facade.listDatasets();
+					})
+					.then((insightDatasets) => {
+						expect(insightDatasets).to.deep.equal([]);
+					});
+			});
 		});
-	});
+	*/
 
 	describe("List Datasets", function () {
 		let facade: IInsightFacade;
@@ -672,7 +684,8 @@ describe("InsightFacade", function () {
 				expect(insightDatasets).to.have.length(0);
 			});
 		});
-		it("should list one dataset", function () {
+
+		it("should list one courses dataset", function () {
 			return facade
 				.addDataset("courses", courses, InsightDatasetKind.Courses)
 				.then(() => {
@@ -690,11 +703,31 @@ describe("InsightFacade", function () {
 					expect(insightDatasets).to.have.length(1);
 				});
 		});
+
+		it("should list one rooms dataset", function () {
+			return facade
+				.addDataset("rooms", rooms, InsightDatasetKind.Rooms)
+				.then(() => {
+					return facade.listDatasets();
+				})
+				.then((insightDatasets) => {
+					expect(insightDatasets).to.deep.equal([
+						{
+							id: "rooms",
+							kind: InsightDatasetKind.Rooms,
+							numRows: 364,
+						},
+					]);
+					expect(insightDatasets).to.be.an.instanceOf(Array);
+					expect(insightDatasets).to.have.length(1);
+				});
+		});
+
 		it("should list multiple datasets", function () {
 			return facade
 				.addDataset("courses", courses, InsightDatasetKind.Courses)
 				.then(() => {
-					return facade.addDataset("courses-2", courses, InsightDatasetKind.Courses);
+					return facade.addDataset("rooms", rooms, InsightDatasetKind.Rooms);
 				})
 				.then(() => {
 					return facade.listDatasets();
@@ -707,9 +740,9 @@ describe("InsightFacade", function () {
 							numRows: 64612,
 						},
 						{
-							id: "courses-2",
-							kind: InsightDatasetKind.Courses,
-							numRows: 64612,
+							id: "rooms",
+							kind: InsightDatasetKind.Rooms,
+							numRows: 364,
 						},
 					];
 					expect(insightDatasets).to.be.an.instanceOf(Array);
@@ -730,7 +763,7 @@ describe("InsightFacade", function () {
 			// Load the datasets specified in datasetsToQuery and add them to InsightFacade.
 			// Will *fail* if there is a problem reading ANY dataset.
 			const loadDatasetPromises = [
-				insightFacade.addDataset("courses", getContentFromArchives("courses.zip"), InsightDatasetKind.Courses),
+				insightFacade.addDataset("courses", courses, InsightDatasetKind.Courses),
 				insightFacade.addDataset(
 					"courses-2",
 					getContentFromArchives("ten-courses.zip"),
