@@ -181,7 +181,7 @@ export function checkDir(dirBlock: any): void {
 }
 
 // Check that a field is consistent with an InsightDatasetKind. If not, throws InsightError
-export function checkKind(field: string, datasetKind: string) {
+export function checkFieldMatchesKind(field: string, datasetKind: string) {
 	if (datasetKind !== InsightDatasetKind.Rooms && datasetKind !== InsightDatasetKind.Courses) {
 		throw new InsightError("Invalid dataset kind reference");
 	}

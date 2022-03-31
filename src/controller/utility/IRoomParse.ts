@@ -219,7 +219,7 @@ function extractBuildingInfoFromParent(trNode: ParentNode, tempHref: string) {
 	};
 }
 
-function getTempRoomNumber(trChild: Element): string{
+function getTempRoomNumber(trChild: Element): string {
 	let tempRoomNumber = "";
 	if (
 		"childNodes" in trChild &&

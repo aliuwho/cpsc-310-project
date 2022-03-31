@@ -4,7 +4,7 @@ import {
 	checkDir,
 	checkExists,
 	checkField,
-	checkKind,
+	checkFieldMatchesKind,
 	checkNonEmptyArray,
 	checkObjectLength,
 	checkString,
@@ -216,7 +216,7 @@ export class IQueryValidator {
 
 			// Field check
 			const specifiedField = splitKey[1];
-			checkKind(specifiedField, this.dataset.info.kind);
+			checkFieldMatchesKind(specifiedField, this.dataset.info.kind);
 			if (keyType === KeyType.KEY) {
 				// A valid key is a valid mkey or skey; check both
 				try {

@@ -1,12 +1,17 @@
-import fs from "fs";
+import fs, {existsSync, readFileSync} from "fs";
 import {IElement} from "../interface/IElement";
-import {InsightDataset, InsightError, InsightResult} from "../IInsightFacade";
+import {InsightDataset, InsightDatasetKind, InsightError, InsightResult} from "../IInsightFacade";
 import {IKind} from "../interface/IKind";
-import {ApplyToken} from "./IValidate";
+import {ApplyToken, checkObjectLength} from "./IValidate";
 import Decimal from "decimal.js";
+import {mkdirSync} from "fs-extra";
 
-// Writes course sections to a JSON file
+// Writes dataset to a JSON file
 export function writeDatasetToJson(kindInstance: IKind[], filePath: string): void {
+	const basicDir = "./data";
+	if (!existsSync(basicDir)) {
+		mkdirSync(basicDir);
+	}
 	fs.writeFileSync(filePath, JSON.stringify(kindInstance));
 }
 
@@ -156,4 +161,25 @@ export function throwNonInsightError(err: unknown) {
 	if (!(err instanceof InsightError)) {
 		throw err;
 	}
+}
+
+// Parses file and creates an IElement
+export function createIElementFromJson(filename: string): IElement {
+	const datasetJsonFile = readFileSync(filename, {encoding: "utf8", flag: "r"});
+	const kinds = JSON.parse(datasetJsonFile);
+	let splitFilename = filename.split("_");
+	checkObjectLength(splitFilename, 2, "Splitting filename from disk");
+	const datasetKind = splitFilename[0].replace("./data/", "");
+	if (datasetKind !== InsightDatasetKind.Rooms && datasetKind !== InsightDatasetKind.Courses) {
+		throw new InsightError(datasetKind + " is not a valid dataset kind");
+	}
+	const datasetId = splitFilename[1].replace(".json", "");
+	return {
+		kinds: kinds,
+		info: {
+			id: datasetId,
+			kind: datasetKind,
+			numRows: kinds.length,
+		},
+	};
 }
