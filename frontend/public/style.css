@@ -1,6 +1,6 @@
 body {
 	background-color: #cccccc;
-	font-family: monospace;
+	font-family: sans-serif;
 }
 
 .button {
@@ -12,7 +12,7 @@ body {
 	text-decoration: none;
 	display: inline-block;
 	font-size: 16px;
-	font-family: monospace;
+	font-family: sans-serif;
 }
 
 .button:hover {
@@ -66,10 +66,31 @@ body {
 	text-decoration: none;
 	display: inline-block;
 	font-size: 16px;
-	font-family: monospace;
+	font-family: sans-serif;
 	transform: translate(0, -50%)
 }
 
 .back-button:hover {
 	cursor: pointer;
+}
+
+table.tb {
+	border-collapse: collapse;
+	width: auto;
+	right: 50%;
+	top: 50%
+}
+
+.tb th, .tb td {
+	padding: 5px;
+	border: solid 1px #000;
+}
+
+.tb th {
+	background-color: #476990;
+	color: #fff;
+}
+
+.tb {
+	margin: auto;
 }

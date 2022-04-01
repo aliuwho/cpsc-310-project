@@ -6,10 +6,14 @@ document.getElementById("submitDeleteRequest").onclick = function () {
 		redirect: 'follow'
 	};
 	fetch("http://localhost:4321/dataset/" + datasetId, requestOptions)
-		.then(response => response.text())
-		.then(result => document.getElementById("deleteResult").innerText = result.toString())
-		.catch(error => alert(error));
-
-	// TODO improve output of success or error
-	// TODO handle case where input breaks html request
+		.then(temp => temp)
+		.then(response => response.json())
+		.then(result => {
+			if (result.result) {
+				return document.getElementById("deleteResult").innerText = result.result + " was successfully deleted."
+			} else {
+				return alert(result.error);
+			}
+		})
+		.catch(error => alert("Unexpected error: " + error));
 };
