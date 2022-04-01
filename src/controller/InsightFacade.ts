@@ -182,13 +182,14 @@ export default class InsightFacade implements IInsightFacade {
 		let dataset = this.datasets.get(id);
 		if (dataset) {
 			const datasetKind = dataset.info.kind;
-			rmSync("./data/" + datasetKind + "_" + id + ".json");
-			return Promise.resolve(id);
-		}
-		if (this.datasets.delete(id)) {
+			const filepath = "./data/" + datasetKind + "_" + id + ".json";
+			if (existsSync(filepath)) {
+				rmSync(filepath);
+			}
+			this.datasets.delete(id);
 			return Promise.resolve(id);
 		} else {
-			return Promise.reject(new NotFoundError("The dataset " + id + " was not found"));
+			return Promise.reject(new NotFoundError("The dataset '" + id + "' was not found"));
 		}
 	}
 
