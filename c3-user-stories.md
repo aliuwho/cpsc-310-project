@@ -26,5 +26,5 @@ Then: The corresponding result (averages of all the courses in the department fo
 Scenario 2: Valid Dataset ID
 Given: The dean is on the query page
 When: The user enters an invalid dataset id, starting year, and a course dept and clicks the “Submit Query” button
-Then: The corresponding error will be displayed as text with some description of the error in the results area of the page.
+Then: The corresponding error will be displayed as text with some description of the error.
 

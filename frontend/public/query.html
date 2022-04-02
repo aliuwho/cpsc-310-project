@@ -9,17 +9,24 @@
 <label for="queryIdInput">Name of dataset to query:</label>
 <input id="queryIdInput" type="text" required>
 
+<br>
+
 <label for="queryYearInput">Starting year of query:</label>
 <input id="queryYearInput" type="number" required>
 
+<br>
+
 <label for="queryDeptInput">Department to query:</label>
 <input id="queryDeptInput" type="text" required>
+
+<br>
 
 <button class="button" id="submitPostRequest">Perform Query</button>
 
 <br>
 
-<a id="queryResult"></a>
+<a class="center" id="queryError"></a>
+<table class="tb" id="queryTable"></table>
 
 <a href="index.html">
 	<button class="back-button" id="homeButton">Back</button>

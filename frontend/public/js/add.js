@@ -13,8 +13,14 @@ document.getElementById("submitAddRequest").onclick = function () {
 	};
 
 	fetch("http://localhost:4321/dataset/" + datasetId + "/" + datasetKind, requestOptions)
-		.then(response => response.text())
-		.then(result => document.getElementById("addResult").innerText = result.toString())
+		.then(response => response.json())
+		.then(result => {
+			if (result.result) {
+				return document.getElementById("addResult").innerText = result.result + " was successfully added."
+			} else {
+				return alert(result.error);
+			}
+		})
 		.catch(error => alert(error));
 
 	// TODO improve output of success or error
