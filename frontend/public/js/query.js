@@ -41,11 +41,50 @@ document.getElementById("submitPostRequest").onclick = function () {
 		body: JSON.stringify(data)
 	};
 	fetch("http://localhost:4321/query", requestOptions)
-		.then(response => response.text())
-		.then(result => document.getElementById("queryResult").innerText = result.toString())
+		.then(response => response.json())
+		.then(result => {
+			if (result.result) {
+				parseQueryResults(result.result);
+			} else {
+				return alert(result.error);
+			}
+		})
 		.catch(error => alert(error));
 
-	// TODO improve output of success or error
-	// TODO change front-end for kind input to only have "courses" / "rooms"
-	//
+
+	/**
+	 * Returns an HTML table row representing a dataset as a string
+	 * @param dataset
+	 * @returns {string}
+	 */
+	function createTableRow(dataset) {
+		let tableString = '<tr>'
+		for (let key in dataset) {
+			tableString += createTableCell(dataset[key]);
+		}
+		tableString += '</tr>'
+		return tableString;
+	}
+
+	/**
+	 * Returns an HTML table cell representing a dataset as a string
+	 * @param content
+	 * @returns {string}
+	 */
+	function createTableCell(content) {
+		return '<td>' + content + '</td>'
+	}
+
+// Creates a JSON table for the queryDataset results
+	function parseQueryResults(insightResults) {
+		let table = document.getElementById("queryTable");
+		let tableContentString = "<tr>\n" +
+			"\t\t<th>Year</th>\n" +
+			"\t\t<th>Department Average</th>\n" +
+			"\t</tr>";
+		for (const dataset of insightResults) {
+			tableContentString += createTableRow(dataset);
+		}
+		table.innerHTML = tableContentString;
+	}
 };

@@ -87,7 +87,6 @@ export default class InsightFacade implements IInsightFacade {
 		let jsZip = new JSZip();
 		try {
 			const loadedZip = await jsZip.loadAsync(content, {base64: true});
-			// !!! catch error for invalid ZIP file
 			const dataFolder = loadedZip.folder(kind);
 			if (dataFolder != null && typeof dataFolder !== "undefined") {
 				if (dataFolder.length <= 0) {
